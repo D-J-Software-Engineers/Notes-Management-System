@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      # 3. Install root dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      # 4. Install server dependencies
+      - name: Install server dependencies
+        run: |
+          cd server
+          npm ci
+
+      # 5. Install client dependencies
+      - name: Install client dependencies
+        run: |
+          cd client
+          npm ci
+
+      # 6. Check code formatting with Prettier
+      - name: Check code formatting
+        run: |
+          npm run format --if-present
+        continue-on-error: false  # fails the job if formatting is wrong
+
+      # 7. Run linting if available
+      - name: Run lint
+        run: |
+          npm run lint --if-present
+
+      # 8. Run server tests
+      - name: Run server tests
+        run: |
+          cd server
+          npm test
+
+      # 9. Optional: build client
+      - name: Build client
+        run: |
+          cd client
+          npm run build --if-present
+
+      # 10. Optional: run client tests
+      - name: Run client tests
+        run: |
+          cd client
+          npm test --if-present
+
+    # 11. Upload coverage reports (optional)
+      - name: Upload test coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            server/coverage
+            client/coverage

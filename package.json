@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
-    "seed": "node server/utils/seedDatabase.js"
+    "seed": "node server/utils/seedDatabase.js",
+    "test": "echo \"No tests yet\""
   },
   "keywords": [
     "education",

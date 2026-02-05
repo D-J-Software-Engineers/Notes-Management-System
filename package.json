@@ -7,7 +7,12 @@
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
     "seed": "node server/utils/seedDatabase.js",
-    "test": "echo \"No tests yet\""
+    "test": "echo \"No tests yet\"",
+    "format": "prettier --write \"**/*.{js,html,css,json,md}\"",
+    "lint": "prettier --check \"**/*.{js,html,css,json,md}\""
+  },
+  "lint-staged": {
+    "*.{js,html,css,json,md}": "prettier --write"
   },
   "keywords": [
     "education",

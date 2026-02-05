@@ -3,16 +3,16 @@
 // ============================================
 
 // Import required packages
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const path = require('path');
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const path = require("path");
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Import database connection
-const connectDB = require('./config/db');
+const connectDB = require("./config/db");
 
 // Create Express application
 const app = express();
@@ -31,22 +31,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files (HTML, CSS, JS, images)
-app.use(express.static(path.join(__dirname, '../client/public')));
-app.use('/pages', express.static(path.join(__dirname, '../client/pages')));
+app.use(express.static(path.join(__dirname, "../client/public")));
+app.use("/pages", express.static(path.join(__dirname, "../client/pages")));
 
 // Serve uploaded files (notes)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // ============================================
 // ROUTES (API Endpoints)
 // ============================================
 
 // Test route to check if server is working
-app.get('/api/test', (req, res) => {
-  res.json({ 
+app.get("/api/test", (req, res) => {
+  res.json({
     success: true,
-    message: '✅ Server is working perfectly!',
-    timestamp: new Date().toISOString()
+    message: "✅ Server is working perfectly!",
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -64,15 +64,15 @@ app.get('/api/test', (req, res) => {
 // app.use('/api/subjects', subjectRoutes);
 
 // Serve the homepage
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/public/index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/public/index.html"));
 });
 
 // Catch-all route for undefined routes (404 handler)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: "Route not found",
   });
 });
 
@@ -80,10 +80,10 @@ app.use((req, res) => {
 // ERROR HANDLER
 // ============================================
 app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
+  console.error("Error:", err.message);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Server Error'
+    message: err.message || "Server Error",
   });
 });
 
@@ -98,23 +98,23 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDB();
-    
+
     // Start listening for requests
     app.listen(PORT, () => {
-      console.log('');
-      console.log('================================================');
-      console.log('🚀 Notes Management System Server');
-      console.log('================================================');
+      console.log("");
+      console.log("================================================");
+      console.log("🚀 Notes Management System Server");
+      console.log("================================================");
       console.log(`✅ Server running on http://localhost:${PORT}`);
-      console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`📁 Environment: ${process.env.NODE_ENV || "development"}`);
       console.log(`📊 Database: Connected`);
-      console.log('================================================');
-      console.log('');
-      console.log('Press Ctrl+C to stop the server');
-      console.log('');
+      console.log("================================================");
+      console.log("");
+      console.log("Press Ctrl+C to stop the server");
+      console.log("");
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    console.error("❌ Failed to start server:", error.message);
     process.exit(1); // Exit with error
   }
 };
@@ -123,8 +123,8 @@ const startServer = async () => {
 startServer();
 
 // Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('❌ Unhandled Promise Rejection:', err.message);
+process.on("unhandledRejection", (err) => {
+  console.error("❌ Unhandled Promise Rejection:", err.message);
   // Close server & exit process
   process.exit(1);
 });

@@ -13,6 +13,7 @@ This system enables:
 - **Students** to browse and download notes (read-only access)
 
 It supports both:
+
 - **O-Level** (S1–S4)
 - **A-Level** (S5–S6, UNEB subject combinations)
 
@@ -23,10 +24,12 @@ The application is built as a **web application / Progressive Web App (PWA)**, a
 ## 🎓 Supported Education Levels
 
 ### O-Level
+
 - Classes: **S1, S2, S3, S4**
 - Subjects: Mathematics, English, Physics, Chemistry, Biology, History, Geography, CRE/IRE, Literature, and others.
 
 ### A-Level
+
 - Classes: **S5, S6**
 - UNEB subject combinations: PCM, BCG, HEG, PCB, HEL, MEG, and others.
 
@@ -35,6 +38,7 @@ The application is built as a **web application / Progressive Web App (PWA)**, a
 ## ✨ Key Features
 
 ### Admin
+
 - Upload notes (PDF, DOC/DOCX, PPT/PPTX)
 - Edit and delete notes
 - Organize notes by level, class, and subject
@@ -42,6 +46,7 @@ The application is built as a **web application / Progressive Web App (PWA)**, a
 - View download statistics
 
 ### Student
+
 - Browse notes by level and subject
 - Download notes
 - Search and filter notes
@@ -53,24 +58,27 @@ The application is built as a **web application / Progressive Web App (PWA)**, a
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - HTML5
 - CSS3
 - JavaScript
 - Bootstrap 5
 
 ### Backend
+
 - Node.js
 - Express.js
 
 ### Database
+
 - MongoDB
 - Mongoose
 
 ### Security
+
 - JWT authentication
 - Password hashing with bcrypt
 - Role-based access control
-
 
 ## 📁 Project Structure (Folders and Files)
 
@@ -189,6 +197,7 @@ notes-management-system/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (LTS)
 - MongoDB (local or Atlas)
 - Git
@@ -199,3 +208,4 @@ notes-management-system/
 git clone https://github.com/D-J-Software-Engineers/Notes-Management-System.git
 cd Notes-Management-System
 npm install
+```

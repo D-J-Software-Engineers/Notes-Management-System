@@ -71,10 +71,10 @@ jobs:
           cd client
           npm test --if-present
 
-      # 11. Upload coverage reports (optional)
+    # 11. Upload coverage reports (optional)
       - name: Upload test coverage
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: |

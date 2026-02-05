@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
-    "seed": "node server/utils/seedDatabase.js"
+    "seed": "node server/utils/seedDatabase.js",
+    "format": "prettier --write \"**/*.{js,html,css,json,md}\"",
+    "lint": "prettier --check \"**/*.{js,html,css,json,md}\""
+  },
+  "lint-staged": {
+    "*.{js,html,css,json,md}": "prettier --write"
   },
   "keywords": [
     "education",

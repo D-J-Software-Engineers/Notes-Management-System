@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { JWT_CONFIG } = require("../config/config");
 
+// Protect routes - ensure user is authenticated
 exports.protect = async (req, res, next) => {
   try {
     let token;
@@ -19,8 +21,21 @@ exports.protect = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id).select("-password");
+    // Use the same JWT secret/config used when generating tokens
+    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
+
+    // Sequelize uses findByPk (primary key) instead of findById
+    const user = await User.findByPk(decoded.id);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    // Attach full user instance (without password due to toJSON override)
+    req.user = user;
 
     next();
   } catch (err) {

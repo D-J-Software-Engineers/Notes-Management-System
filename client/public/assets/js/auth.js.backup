@@ -5,21 +5,6 @@
 
 const API_BASE = "/api";
 
-
-// Token management functions
-function setToken(token) {
-  localStorage.setItem("token", token);
-}
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-function removeToken() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-}
-
 // Handle login form submission
 async function handleLogin(event) {
   event.preventDefault();
@@ -82,10 +67,6 @@ async function handleLogin(event) {
 
     // Store token
     setToken(data.data.token);
-    // Persist user info (used by some admin/student scripts)
-    if (data.data.user) {
-      localStorage.setItem("user", JSON.stringify(data.data.user));
-    }
 
     // Redirect based on role and verify role matches
     const userRole = data.data.user.role;

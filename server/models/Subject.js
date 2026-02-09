@@ -1,60 +1,62 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const { sequelize } = require("../config/db");
 
 // Subject represents a single curriculum subject for a given level/class.
 // Admin can create/update/delete to match curriculum changes.
-const subjectSchema = new mongoose.Schema(
+const Subject = sequelize.define(
+  "Subject",
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
     name: {
-      type: String,
-      required: [true, "Please provide a subject name"],
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: "Please provide a subject name" },
+      },
     },
-
     code: {
-      type: String,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-
     // o-level or a-level
     level: {
-      type: String,
-      enum: ["o-level", "a-level"],
-      required: [true, "Please specify subject level"],
+      type: DataTypes.ENUM("o-level", "a-level"),
+      allowNull: false,
     },
-
     // Class this subject applies to (s1–s6)
     class: {
-      type: String,
-      enum: ["s1", "s2", "s3", "s4", "s5", "s6"],
-      required: [true, "Please specify class"],
+      type: DataTypes.ENUM("s1", "s2", "s3", "s4", "s5", "s6"),
+      allowNull: false,
     },
-
     // For S3/S4: compulsory vs optional
     isCompulsory: {
-      type: Boolean,
-      default: true,
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     },
-
     // A-Level stream this subject belongs to (arts, science or both)
     stream: {
-      type: String,
-      enum: ["arts", "science", "both", null],
-      default: null,
+      type: DataTypes.ENUM("arts", "science", "both"),
+      allowNull: true,
     },
-
     isActive: {
-      type: Boolean,
-      default: true,
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
     },
   },
   {
+    tableName: "subjects",
     timestamps: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ["name", "level", "class"],
+      },
+    ],
   },
 );
-
-// Ensure subject names are unique per class/level
-subjectSchema.index({ name: 1, level: 1, class: 1 }, { unique: true });
-
-const Subject = mongoose.model("Subject", subjectSchema);
 
 module.exports = Subject;

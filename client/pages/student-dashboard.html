@@ -8,8 +8,339 @@
     <link rel="stylesheet" href="/assets/css/student.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <!-- Top navigation styled by student.css -->
+    <nav class="student-nav">
+      <div class="nav-container">
+        <h1 class="nav-logo">📚 Notes Management System</h1>
+        <div class="nav-user">
+          <span id="studentNameNav">Student</span>
+          <button class="btn-logout" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="student-container">
+      <!-- Sidebar -->
+      <aside class="student-sidebar">
+        <ul class="sidebar-menu">
+          <li>
+            <a href="#" class="sidebar-link active" data-tab="dashboard"
+              >🏠 Dashboard</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main content -->
+      <main class="student-main" id="studentMain">
+        <!-- Dashboard tab -->
+        <section id="dashboardTab" class="tab-content">
+          <div class="student-info-card">
+            <h3>Your Status</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <strong>Name:</strong>
+                <div id="studentName">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Level:</strong>
+                <div id="studentLevel">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Class:</strong>
+                <div id="studentClass">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Combination:</strong>
+                <div id="studentCombination">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Account Status:</strong>
+                <div id="studentStatus">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Available Notes</h3>
+              <p class="stat-number" id="notesCount">0</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notes tab -->
+        <section id="notesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Your Class Notes</h2>
+            <div class="filters">
+              <input
+                type="text"
+                id="notesSearch"
+                placeholder="Search notes by title or subject..."
+              />
+            </div>
+          </div>
+          <div id="notesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Profile tab -->
+        <section id="profileTab" class="tab-content" style="display: none">
+          <div class="profile-card">
+            <div class="profile-info">
+              <h3>Your Profile</h3>
+              <p><strong>Name:</strong> <span id="profileName">-</span></p>
+              <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+              <p><strong>Level:</strong> <span id="profileLevel">-</span></p>
+              <p><strong>Class:</strong> <span id="profileClass">-</span></p>
+              <p>
+                <strong>Combination:</strong>
+                <span id="profileCombination">-</span>
+              </p>
+              <p>
+                <strong>Status:</strong>
+                <span id="profileStatus">-</span>
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
     <script src="/assets/js/utils.js"></script>
-    <script src="/assets/js/student.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script>
+      let allNotes = [];
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        const user = await getCurrentUser();
+        if (!user || user.role !== "student") {
+          // Not a student or not logged in
+          logout();
+          return;
+        }
+
+        // Fill basic info
+        document.getElementById("studentNameNav").textContent = user.name;
+        document.getElementById("studentName").textContent = user.name;
+        document.getElementById("studentLevel").textContent =
+          user.level || "-";
+        document.getElementById("studentClass").textContent = (
+          user.class || "-"
+        ).toUpperCase();
+        document.getElementById("studentCombination").textContent =
+          user.combination || "-";
+
+        const statusText = user.isConfirmed
+          ? "Confirmed"
+          : "Pending Approval";
+        document.getElementById("studentStatus").textContent = statusText;
+
+        // Profile tab info
+        document.getElementById("profileName").textContent = user.name;
+        document.getElementById("profileEmail").textContent = user.email;
+        document.getElementById("profileLevel").textContent = user.level || "-";
+        document.getElementById("profileClass").textContent = (
+          user.class || "-"
+        ).toUpperCase();
+        document.getElementById("profileCombination").textContent =
+          user.combination || "-";
+        document.getElementById("profileStatus").textContent = statusText;
+
+        // Logout button
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", () => {
+            logout();
+          });
+        }
+
+        // Sidebar tab switching
+        document.querySelectorAll(".sidebar-link").forEach((link) => {
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const tab = link.getAttribute("data-tab");
+            switchTab(tab);
+          });
+        });
+
+        // Notes search
+        const notesSearch = document.getElementById("notesSearch");
+        if (notesSearch) {
+          notesSearch.addEventListener(
+            "input",
+            debounce((e) => filterNotes(e.target.value), 300),
+          );
+        }
+
+        // Global click handler for download buttons
+        document.addEventListener("click", (e) => {
+          if (e.target.classList.contains("download-note-btn")) {
+            const noteId = e.target.getAttribute("data-note-id");
+            const noteTitle = e.target.getAttribute("data-note-title");
+            downloadNote(noteId, noteTitle);
+          }
+        });
+
+        // Load notes for this student (filtered by level & class)
+        await loadNotesForStudent(user);
+      });
+
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".sidebar-link")
+          .forEach((l) => l.classList.remove("active"));
+        const activeLink = document.querySelector(
+          `.sidebar-link[data-tab="${tab}"]`,
+        );
+        if (activeLink) activeLink.classList.add("active");
+
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((section) => (section.style.display = "none"));
+
+        const tabEl = document.getElementById(
+          tab === "dashboard" ? "dashboardTab" : `${tab}Tab`,
+        );
+        if (tabEl) tabEl.style.display = "block";
+      }
+
+      async function loadNotesForStudent(user) {
+        const container = document.getElementById("notesContainer");
+        if (!container) return;
+
+        container.innerHTML =
+          '<div class="loading">Loading notes for your class...</div>';
+
+        try {
+          const params = new URLSearchParams();
+          if (user.level) params.append("level", user.level);
+          if (user.class) params.append("class", user.class);
+
+          let url = `${API_BASE}/notes`;
+          const query = params.toString();
+          if (query) url += "?" + query;
+
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+          });
+
+          if (!res.ok) {
+            throw new Error("Failed to load notes");
+          }
+
+          const data = await res.json();
+          allNotes = data.data || [];
+
+          document.getElementById("notesCount").textContent = allNotes.length;
+          renderNotes(allNotes);
+        } catch (err) {
+          console.error("Failed to load notes", err);
+          container.innerHTML =
+            '<div class="no-data">Could not load notes. Please try again later.</div>';
+        }
+      }
+
+      function renderNotes(notes) {
+        const container = document.getElementById("notesContainer");
+        if (!container) return;
+
+        if (!notes.length) {
+          container.innerHTML =
+            '<div class="no-data">No notes found for your class yet.</div>';
+          return;
+        }
+
+        container.innerHTML = notes
+          .map(
+            (note) => `
+          <article class="note-card">
+            <div class="note-header">
+              <h3>${note.title}</h3>
+              <span class="note-badge">${note.subject}</span>
+            </div>
+            <p class="note-description">
+              ${note.description || "No description provided."}
+            </p>
+            <div class="note-meta">
+              <span>Level: ${note.level}</span>
+              <span>Class: ${note.class.toUpperCase()}</span>
+              ${
+                note.combination
+                  ? `<span>Combination: ${note.combination}</span>`
+                  : ""
+              }
+              <span>Uploaded: ${formatDate(note.createdAt)}</span>
+            </div>
+            <div class="note-actions">
+              <button
+                class="btn-sm btn-primary download-note-btn"
+                data-note-id="${note.id}"
+                data-note-title="${note.title.replace(/"/g, "&quot;")}"
+              >
+                Download
+              </button>
+            </div>
+          </article>
+        `,
+          )
+          .join("");
+      }
+
+      function filterNotes(term) {
+        const q = term.trim().toLowerCase();
+        if (!q) {
+          renderNotes(allNotes);
+          return;
+        }
+
+        const filtered = allNotes.filter((note) => {
+          return (
+            (note.title && note.title.toLowerCase().includes(q)) ||
+            (note.subject && note.subject.toLowerCase().includes(q)) ||
+            (note.description &&
+              note.description.toLowerCase().includes(q))
+          );
+        });
+
+        renderNotes(filtered);
+      }
+
+      async function downloadNote(id, title) {
+        try {
+          const res = await fetch(`${API_BASE}/notes/${id}/download`, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to download note");
+          }
+
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = (title || "note").replace(/[^\w\-.]+/g, "_");
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error("Download failed", err);
+          alert(err.message || "Failed to download note");
+        }
+      }
+    </script>
   </body>
 </html>

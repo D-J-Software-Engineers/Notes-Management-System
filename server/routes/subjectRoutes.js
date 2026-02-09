@@ -1,28 +1,33 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-
 const {
+  getAllSubjects,
+  getSubjectsByLevel,
+  getCombinations,
   createSubject,
-  getSubjects,
-  getSubject,
   updateSubject,
-  deleteSubject,
-} = require("../controllers/subjectController");
+  deleteSubject
+} = require('../controllers/subjectController');
+const { protect, authorize } = require('../middleware/auth');
 
-const { protect, authorize } = require("../middleware/auth");
-
-// All subject routes require authentication
 router.use(protect);
 
-// List subjects (students and admin)
-router.get("/", getSubjects);
-router.get("/:id", getSubject);
+// List & filter subjects, or create new (admin only)
+router
+  .route('/')
+  .get(getAllSubjects)
+  .post(authorize('admin'), createSubject);
 
-// Admin-only management routes
-router.use(authorize("admin"));
+// Level-based listing
+router.get('/level/:level', getSubjectsByLevel);
 
-router.post("/", createSubject);
-router.put("/:id", updateSubject);
-router.delete("/:id", deleteSubject);
+// A-Level combinations metadata
+router.get('/combinations', getCombinations);
+
+// Update/delete specific subject (admin only)
+router
+  .route('/:id')
+  .put(authorize('admin'), updateSubject)
+  .delete(authorize('admin'), deleteSubject);
 
 module.exports = router;

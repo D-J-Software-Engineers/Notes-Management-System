@@ -1,36 +1,34 @@
-// userRoutes.js
-const express = require("express");
-const userRouter = express.Router();
-
+const express = require('express');
+const router = express.Router();
 const {
-  getProfile,
   getAllUsers,
   getUser,
+  createUser,
   updateUser,
   deleteUser,
-  updateProfile,
-} = require("../controllers/userController");
+  deactivateUser,
+  activateUser,
+  getUserStats,
+  approveUser,
+  rejectUser,
+  getPendingUsers
+} = require('../controllers/userController');
+const { protect, authorize } = require('../middleware/auth');
+const { validateRegister } = require('../middleware/validation');
 
-const { register, login } = require("../controllers/authController");
+router.use(protect);
+router.use(authorize('admin'));
 
-const { protect, authorize } = require("../middleware/auth");
+router.get('/stats', getUserStats);
+router.get('/pending', getPendingUsers);
+router.get('/', getAllUsers);
+router.get('/:id', getUser);
+router.post('/', validateRegister, createUser);
+router.put('/:id', updateUser);
+router.delete('/:id', deleteUser);
+router.put('/:id/deactivate', deactivateUser);
+router.put('/:id/activate', activateUser);
+router.put('/:id/approve', approveUser);
+router.put('/:id/reject', rejectUser);
 
-// Public routes (reuse auth controller handlers)
-userRouter.post("/register", register);
-userRouter.post("/login", login);
-
-// Protected routes
-userRouter.use(protect); // All routes below require authentication
-
-userRouter.get("/profile", getProfile);
-userRouter.put("/profile", updateProfile);
-
-// Admin only routes
-userRouter.use(authorize("admin"));
-
-userRouter.get("/", getAllUsers);
-userRouter.get("/:id", getUser);
-userRouter.put("/:id", updateUser);
-userRouter.delete("/:id", deleteUser);
-
-module.exports = userRouter;
+module.exports = router;

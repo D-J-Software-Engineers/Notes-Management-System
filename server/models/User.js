@@ -1,164 +1,124 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { JWT_CONFIG } = require("../config/config");
+const { DataTypes } = require('sequelize');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { sequelize } = require('../config/db');
+const { JWT_CONFIG } = require('../config/config');
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
   name: {
-    type: String,
-    required: [true, "Please provide a name"],
-    trim: true,
-    maxlength: [50, "Name cannot be more than 50 characters"],
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Please provide a name' },
+      len: { args: [1, 50], msg: 'Name cannot be more than 50 characters' }
+    }
   },
-
   email: {
-    type: String,
-    required: [true, "Please provide an email"],
+    type: DataTypes.STRING,
+    allowNull: false,
     unique: true,
-    lowercase: true,
-    match: [
-      /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-      "Please provide a valid email",
-    ],
+    validate: {
+      isEmail: { msg: 'Please provide a valid email' }
+    }
   },
-
   password: {
-    type: String,
-    required: [true, "Please provide a password"],
-    minlength: [6, "Password must be at least 6 characters"],
-    select: false,
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: { args: [6, 100], msg: 'Password must be at least 6 characters' }
+    }
   },
-
   role: {
-    type: String,
-    enum: ["student", "admin"],
-    default: "student",
+    type: DataTypes.ENUM('student', 'admin'),
+    defaultValue: 'student'
   },
-
   class: {
-    type: String,
-    enum: ["s1", "s2", "s3", "s4", "s5", "s6", null],
-    required: function () {
-      return this.role === "student";
-    },
+    type: DataTypes.ENUM('s1', 's2', 's3', 's4', 's5', 's6'),
+    allowNull: true
   },
-
   level: {
-    type: String,
-    enum: ["o-level", "a-level", null],
-    required: function () {
-      return this.role === "student";
-    },
+    type: DataTypes.ENUM('o-level', 'a-level'),
+    allowNull: true
   },
-
-  // A-Level stream: arts or science
-  stream: {
-    type: String,
-    enum: ["arts", "science", null],
-    required: function () {
-      return this.role === "student" && this.level === "a-level";
-    },
-  },
-
-  // A-Level combination (now flexible so admin can add new ones)
   combination: {
-    type: String,
-    trim: true,
-    required: function () {
-      return this.role === "student" && this.level === "a-level";
-    },
+    type: DataTypes.ENUM('PCM', 'PCB', 'BCG', 'HEG', 'HEL', 'MEG', 'DEG', 'MPG', 'BCM', 'HGL', 'AKR'),
+    allowNull: true
   },
-
-  // Optional subjects chosen by O-Level students (typically S3/S4)
-  optionalSubjects: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-    },
-  ],
-
-  // Whether the account has been confirmed/approved by an admin
-  // Admins are auto-confirmed, students need admin approval
-  isConfirmed: {
-    type: Boolean,
-    default: function () {
-      // Admins are auto-confirmed, students need approval
-      return this.role === "admin";
-    },
-  },
-
   isActive: {
-    type: Boolean,
-    default: true,
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
+  isConfirmed: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  }
+}, {
+  tableName: 'users',
+  timestamps: true,
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+      if (user.role === 'admin') {
+        user.isConfirmed = true;
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
+  }
 });
 
-userSchema.pre("save", async function (next) {
-  // Auto-confirm admins (they don't need approval)
-  if (this.role === "admin" && !this.isConfirmed) {
-    this.isConfirmed = true;
-  }
-
-  // Hash password if it's been modified
-  if (!this.isModified("password")) {
-    return next();
-  }
-
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
-
-userSchema.methods.comparePassword = async function (enteredPassword) {
+User.prototype.comparePassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.generateAuthToken = function () {
-  return jwt.sign({ id: this._id, role: this.role }, JWT_CONFIG.SECRET, {
-    expiresIn: JWT_CONFIG.EXPIRE,
-  });
+User.prototype.generateAuthToken = function() {
+  return jwt.sign(
+    { id: this.id, role: this.role },
+    JWT_CONFIG.SECRET,
+    { expiresIn: JWT_CONFIG.EXPIRE }
+  );
 };
 
-userSchema.methods.toJSON = function () {
-  const user = this.toObject();
-  delete user.password;
-  return user;
+User.prototype.toJSON = function() {
+  const values = Object.assign({}, this.get());
+  delete values.password;
+  return values;
 };
 
-userSchema.statics.findByCredentials = async function (email, password) {
-  const user = await this.findOne({ email }).select("+password");
-
+User.findByCredentials = async function(email, password) {
+  const user = await this.findOne({ where: { email } });
+  
   if (!user) {
-    throw new Error("Invalid email or password");
+    throw new Error('Invalid email or password');
   }
-
+  
   if (!user.isActive) {
-    throw new Error("Account is deactivated. Please contact admin.");
+    throw new Error('Account is deactivated. Please contact admin.');
   }
-
-  // Only students need confirmation; admins are auto-confirmed
-  if (user.role === "student" && !user.isConfirmed) {
-    throw new Error("Account pending approval. Please contact admin.");
+  
+  if (!user.isConfirmed) {
+    throw new Error('Account pending approval. Please contact admin.');
   }
-
+  
   const isMatch = await user.comparePassword(password);
-
+  
   if (!isMatch) {
-    throw new Error("Invalid email or password");
+    throw new Error('Invalid email or password');
   }
-
+  
   return user;
 };
-
-const User = mongoose.model("User", userSchema);
 
 module.exports = User;

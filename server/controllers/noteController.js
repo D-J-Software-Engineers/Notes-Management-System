@@ -4,9 +4,11 @@
 // ============================================
 
 const Note = require("../models/Note");
+const User = require("../models/User");
 const { ErrorResponse } = require("../middleware/errorHandler");
 const fs = require("fs").promises;
 const path = require("path");
+const { Op } = require("sequelize");
 
 // @desc    Get all notes with filters
 // @route   GET /api/notes
@@ -22,35 +24,41 @@ exports.getAllNotes = async (req, res, next) => {
       page = 1,
     } = req.query;
 
-    // Build query
-    const query = { isActive: true };
+    // Build Sequelize where clause
+    const where = { isActive: true };
 
-    if (level) query.level = level;
-    if (classLevel) query.class = classLevel;
-    if (subject) query.subject = subject;
+    if (level) where.level = level;
+    if (classLevel) where.class = classLevel;
+    if (subject) where.subject = subject;
 
-    // Text search
+    // Text search (basic title/description search)
     if (search) {
-      query.$text = { $search: search };
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+      ];
     }
 
-    // Execute query with pagination
-    const skip = (page - 1) * limit;
-    const notes = await Note.find(query)
-      .populate("uploadedBy", "name email")
-      .sort(search ? { score: { $meta: "textScore" } } : { createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(skip);
+    const limitNum = parseInt(limit);
+    const pageNum = parseInt(page);
+    const offset = (pageNum - 1) * limitNum;
 
-    // Get total count
-    const total = await Note.countDocuments(query);
+    const { rows: notes, count: total } = await Note.findAndCountAll({
+      where,
+      include: [
+        { model: User, as: "uploadedBy", attributes: ["id", "name", "email"] },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: limitNum,
+      offset,
+    });
 
     res.status(200).json({
       success: true,
       count: notes.length,
       total,
-      page: parseInt(page),
-      pages: Math.ceil(total / limit),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
       data: notes,
     });
   } catch (error) {
@@ -63,10 +71,11 @@ exports.getAllNotes = async (req, res, next) => {
 // @access  Private
 exports.getNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id).populate(
-      "uploadedBy",
-      "name email",
-    );
+    const note = await Note.findByPk(req.params.id, {
+      include: [
+        { model: User, as: "uploadedBy", attributes: ["id", "name", "email"] },
+      ],
+    });
 
     if (!note) {
       return next(new ErrorResponse("Note not found", 404));
@@ -116,7 +125,7 @@ exports.createNote = async (req, res, next) => {
       filePath: req.file.path,
       fileSize: req.file.size,
       fileType: req.file.mimetype,
-      uploadedBy: req.user.id,
+      uploadedById: req.user.id,
     });
 
     res.status(201).json({
@@ -138,7 +147,7 @@ exports.createNote = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.updateNote = async (req, res, next) => {
   try {
-    let note = await Note.findById(req.params.id);
+    let note = await Note.findByPk(req.params.id);
 
     if (!note) {
       return next(new ErrorResponse("Note not found", 404));
@@ -195,7 +204,7 @@ exports.updateNote = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.deleteNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findByPk(req.params.id);
 
     if (!note) {
       return next(new ErrorResponse("Note not found", 404));
@@ -205,7 +214,7 @@ exports.deleteNote = async (req, res, next) => {
     await fs.unlink(note.filePath).catch(console.error);
 
     // Delete from database
-    await note.deleteOne();
+    await note.destroy();
 
     res.status(200).json({
       success: true,
@@ -221,7 +230,7 @@ exports.deleteNote = async (req, res, next) => {
 // @access  Private
 exports.downloadNote = async (req, res, next) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const note = await Note.findByPk(req.params.id);
 
     if (!note) {
       return next(new ErrorResponse("Note not found", 404));

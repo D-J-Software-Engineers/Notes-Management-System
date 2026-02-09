@@ -1,128 +1,157 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/db');
+const User = require('./User');
 
-// Note represents an uploaded study material file
-const noteSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: [true, "Please provide a title"],
-      trim: true,
-    },
-
-    description: {
-      type: String,
-      trim: true,
-    },
-
-    subject: {
-      type: String,
-      required: [true, "Please specify subject"],
-      trim: true,
-    },
-
-    // o-level or a-level
-    level: {
-      type: String,
-      enum: ["o-level", "a-level"],
-      required: [true, "Please specify level"],
-    },
-
-    // Class this note applies to (s1–s6)
-    class: {
-      type: String,
-      enum: ["s1", "s2", "s3", "s4", "s5", "s6"],
-      required: [true, "Please specify class"],
-    },
-
-    // A-Level combination (optional)
-    combination: {
-      type: String,
-      trim: true,
-    },
-
-    // File information
-    fileName: {
-      type: String,
-      required: true,
-    },
-
-    originalFileName: {
-      type: String,
-      required: true,
-    },
-
-    filePath: {
-      type: String,
-      required: true,
-    },
-
-    fileSize: {
-      type: Number,
-      required: true,
-    },
-
-    fileType: {
-      type: String,
-      required: true,
-    },
-
-    // Who uploaded this note
-    uploadedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    // Statistics
-    views: {
-      type: Number,
-      default: 0,
-    },
-
-    downloads: {
-      type: Number,
-      default: 0,
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+const Note = sequelize.define('Note', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
   },
-  {
-    timestamps: true,
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Please provide a title' }
+    }
   },
-);
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  subject: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: { msg: 'Please provide a subject' }
+    }
+  },
+  class: {
+    type: DataTypes.ENUM('s1', 's2', 's3', 's4', 's5', 's6'),
+    allowNull: false
+  },
+  level: {
+    type: DataTypes.ENUM('o-level', 'a-level'),
+    allowNull: false
+  },
+  combination: {
+    type: DataTypes.ENUM('PCM', 'PCB', 'BCG', 'HEG', 'HEL', 'MEG', 'DEG', 'MPG', 'BCM', 'HGL', 'AKR'),
+    allowNull: true
+  },
+  fileName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  originalFileName: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  filePath: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  fileSize: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  fileType: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  downloads: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  views: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  uploadedById: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'notes',
+  timestamps: true,
+  indexes: [
+    { fields: ['title'] },
+    { fields: ['subject'] },
+    { fields: ['class'] },
+    { fields: ['level'] },
+    { fields: ['subject', 'class', 'level'] },
+    { fields: ['createdAt'] }
+  ]
+});
 
-// Text search index
-noteSchema.index({ title: "text", description: "text", subject: "text" });
+Note.belongsTo(User, { foreignKey: 'uploadedById', as: 'uploadedBy' });
 
-// Methods
-noteSchema.methods.incrementViews = async function () {
-  this.views += 1;
-  await this.save();
-};
-
-noteSchema.methods.incrementDownloads = async function () {
+Note.prototype.incrementDownloads = async function() {
   this.downloads += 1;
   await this.save();
+  return this;
 };
 
-// Static methods
-noteSchema.statics.getRecentNotes = async function (limit = 10) {
-  return await this.find({ isActive: true })
-    .populate("uploadedBy", "name email")
-    .sort({ createdAt: -1 })
-    .limit(limit);
+Note.prototype.incrementViews = async function() {
+  this.views += 1;
+  await this.save();
+  return this;
 };
 
-noteSchema.statics.getPopularNotes = async function (limit = 10) {
-  return await this.find({ isActive: true })
-    .populate("uploadedBy", "name email")
-    .sort({ downloads: -1, views: -1 })
-    .limit(limit);
+Note.prototype.getReadableFileSize = function() {
+  const bytes = this.fileSize;
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
 
-const Note = mongoose.model("Note", noteSchema);
+Note.searchNotes = async function(searchTerm, filters = {}) {
+  const where = { isActive: true };
+  
+  if (searchTerm) {
+    where[sequelize.Sequelize.Op.or] = [
+      { title: { [sequelize.Sequelize.Op.iLike]: `%${searchTerm}%` } },
+      { description: { [sequelize.Sequelize.Op.iLike]: `%${searchTerm}%` } }
+    ];
+  }
+  
+  if (filters.level) where.level = filters.level;
+  if (filters.class) where.class = filters.class;
+  if (filters.subject) where.subject = filters.subject;
+  if (filters.combination) where.combination = filters.combination;
+  
+  return await this.findAll({
+    where,
+    include: [{ model: User, as: 'uploadedBy', attributes: ['id', 'name', 'email'] }],
+    order: [['createdAt', 'DESC']]
+  });
+};
+
+Note.getRecentNotes = async function(limit = 10) {
+  return await this.findAll({
+    where: { isActive: true },
+    include: [{ model: User, as: 'uploadedBy', attributes: ['id', 'name', 'email'] }],
+    order: [['createdAt', 'DESC']],
+    limit
+  });
+};
+
+Note.getPopularNotes = async function(limit = 10) {
+  return await this.findAll({
+    where: { isActive: true },
+    include: [{ model: User, as: 'uploadedBy', attributes: ['id', 'name', 'email'] }],
+    order: [['downloads', 'DESC']],
+    limit
+  });
+};
 
 module.exports = Note;

@@ -9,6 +9,12 @@ let allStudents = [];
 let allSubjects = [];
 let allNotes = [];
 
+// Token management functions
+function removeToken() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+}
+
 // Initialize admin dashboard
 document.addEventListener("DOMContentLoaded", () => {
   checkAuth();
@@ -253,16 +259,32 @@ async function loadDashboard() {
     const subjects = subjectsData.data || [];
     const notes = notesData.data || [];
 
-    document.getElementById("totalStudents").textContent = students.filter(
-      (s) => s.role === "student",
-    ).length;
-    document.getElementById("pendingStudents").textContent = students.filter(
-      (s) => s.role === "student" && !s.isConfirmed,
-    ).length;
-    document.getElementById("totalSubjects").textContent = subjects.filter(
-      (s) => s.isActive,
-    ).length;
-    document.getElementById("totalNotes").textContent = notes.length;
+    const totalStudentsEl = document.getElementById("totalStudents");
+    const pendingStudentsEl = document.getElementById("pendingStudents");
+    const totalSubjectsEl = document.getElementById("totalSubjects");
+    const totalNotesEl = document.getElementById("totalNotes");
+
+    // These elements exist only on the dashboard tab; guard against null when called from other tabs
+    if (totalStudentsEl) {
+      totalStudentsEl.textContent = students.filter(
+        (s) => s.role === "student",
+      ).length;
+    }
+
+    if (pendingStudentsEl) {
+      pendingStudentsEl.textContent = students.filter(
+        (s) => s.role === "student" && !s.isConfirmed,
+      ).length;
+    }
+
+    if (totalSubjectsEl) {
+      // Subjects API currently returns all subjects without an isActive flag; just count them
+      totalSubjectsEl.textContent = subjects.length;
+    }
+
+    if (totalNotesEl) {
+      totalNotesEl.textContent = notes.length;
+    }
   } catch (error) {
     console.error("Failed to load dashboard:", error);
     showError("Failed to load dashboard data");
@@ -376,10 +398,10 @@ function displayStudents(students) {
                 ${!student.isActive ? '<span class="badge badge-danger">Inactive</span>' : ""}
             </td>
             <td>
-                <button class="btn-sm btn-primary view-student-btn" data-student-id="${student._id}">View</button>
-                ${!student.isConfirmed ? `<button class="btn-sm btn-success confirm-student-btn" data-student-id="${student._id}">Confirm</button>` : ""}
-                ${student.isActive ? `<button class="btn-sm btn-danger deactivate-student-btn" data-student-id="${student._id}">Deactivate</button>` : `<button class="btn-sm btn-success activate-student-btn" data-student-id="${student._id}">Activate</button>`}
-                <button class="btn-sm btn-danger delete-student-btn" data-student-id="${student._id}">Delete</button>
+                <button class="btn-sm btn-primary view-student-btn" data-student-id="${student.id}">View</button>
+                ${!student.isConfirmed ? `<button class="btn-sm btn-success confirm-student-btn" data-student-id="${student.id}">Confirm</button>` : ""}
+                ${student.isActive ? `<button class="btn-sm btn-danger deactivate-student-btn" data-student-id="${student.id}">Deactivate</button>` : `<button class="btn-sm btn-success activate-student-btn" data-student-id="${student.id}">Activate</button>`}
+                <button class="btn-sm btn-danger delete-student-btn" data-student-id="${student.id}">Delete</button>
             </td>
         </tr>
     `,
@@ -483,7 +505,7 @@ async function deleteStudent(id) {
 }
 
 async function viewStudent(id) {
-  const student = allStudents.find((s) => s._id === id);
+  const student = allStudents.find((s) => s.id === id);
   if (!student) return;
 
   showModal(
@@ -614,12 +636,18 @@ function displaySubjects(subjects) {
             <td>${subject.name}</td>
             <td>${subject.code || "-"}</td>
             <td>${subject.level}</td>
-            <td>${subject.class.toUpperCase()}</td>
+            <td>${
+              subject.class
+                ? subject.class.toUpperCase()
+                : subject.classes
+                  ? subject.classes.join(", ").toUpperCase()
+                  : "-"
+            }</td>
             <td>${subject.isCompulsory ? "Yes" : "No"}</td>
             <td>${subject.stream || "-"}</td>
             <td>
-                <button class="btn-sm btn-primary edit-subject-btn" data-subject-id="${subject._id}">Edit</button>
-                <button class="btn-sm btn-danger delete-subject-btn" data-subject-id="${subject._id}">Delete</button>
+                <button class="btn-sm btn-primary edit-subject-btn" data-subject-id="${subject.id}">Edit</button>
+                <button class="btn-sm btn-danger delete-subject-btn" data-subject-id="${subject.id}">Delete</button>
             </td>
         </tr>
     `,
@@ -632,7 +660,7 @@ function showAddSubjectModal() {
 }
 
 function editSubject(id) {
-  const subject = allSubjects.find((s) => s._id === id);
+  const subject = allSubjects.find((s) => s.id === id);
   if (!subject) return;
   showSubjectModal("Edit Subject", subject);
 }
@@ -640,7 +668,7 @@ function editSubject(id) {
 function showSubjectModal(title, subject) {
   const modalContent = `
         <form id="subjectForm">
-            <input type="hidden" id="subjectId" value="${subject ? subject._id : ""}">
+            <input type="hidden" id="subjectId" value="${subject ? subject.id : ""}">
             <div class="form-group">
                 <label>Subject Name *</label>
                 <input type="text" id="subjectName" value="${subject ? subject.name : ""}" required>
@@ -900,8 +928,8 @@ function displayNotes(notes) {
             <td>${note.class.toUpperCase()}</td>
             <td>${new Date(note.createdAt).toLocaleDateString()}</td>
             <td>
-                <button class="btn-sm btn-primary edit-note-btn" data-note-id="${note._id}">Edit</button>
-                <button class="btn-sm btn-danger delete-note-btn" data-note-id="${note._id}">Delete</button>
+                <button class="btn-sm btn-primary edit-note-btn" data-note-id="${note.id}">Edit</button>
+                <button class="btn-sm btn-danger delete-note-btn" data-note-id="${note.id}">Delete</button>
             </td>
         </tr>
     `,
@@ -914,7 +942,7 @@ function showAddNoteModal() {
 }
 
 function editNote(id) {
-  const note = allNotes.find((n) => n._id === id);
+  const note = allNotes.find((n) => n.id === id);
   if (!note) return;
   showNoteModal("Edit Note", note);
 }
@@ -922,7 +950,7 @@ function editNote(id) {
 function showNoteModal(title, note) {
   const modalContent = `
         <form id="noteForm" enctype="multipart/form-data">
-            <input type="hidden" id="noteId" value="${note ? note._id : ""}">
+            <input type="hidden" id="noteId" value="${note ? note.id : ""}">
             <div class="form-group">
                 <label>Title *</label>
                 <input type="text" id="noteTitle" value="${note ? note.title : ""}" required>

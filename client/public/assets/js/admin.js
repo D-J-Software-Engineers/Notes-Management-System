@@ -8,6 +8,7 @@ let currentAdmin = null;
 let allStudents = [];
 let allSubjects = [];
 let allNotes = [];
+let allResources = [];
 
 // Token management functions
 function removeToken() {
@@ -22,21 +23,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Check authentication
 async function checkAuth() {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   if (!token) {
-    window.location.href = "/pages/login.html";
+    window.location.href = "/pages/login.html?role=admin";
     return;
   }
 
   try {
-    const response = await fetch(`${API_BASE}/auth/me`, {
+    const response = await authFetch(`${API_BASE}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
+    // 401 is handled by authFetch (redirect + removeToken)
+    if (response.status === 401) {
+      return;
+    }
+
     if (!response.ok) {
-      throw new Error("Not authenticated");
+      // Non-401 error - don't clear token, server might be temporarily down
+      const msg = await response.text();
+      console.error("Auth check failed:", response.status, msg);
+      if (confirm("Could not verify session. Retry?")) {
+        checkAuth();
+      } else {
+        window.location.href = "/pages/login.html?role=admin";
+      }
+      return;
     }
 
     const data = await response.json();
@@ -54,9 +68,13 @@ async function checkAuth() {
     currentAdmin = data.data;
     renderApp();
   } catch (error) {
+    // Network error or JSON parse error - don't clear token
     console.error("Auth check failed:", error);
-    localStorage.removeItem("token");
-    window.location.href = "/pages/login.html";
+    if (confirm("Connection error. Retry?")) {
+      checkAuth();
+    } else {
+      window.location.href = "/pages/login.html?role=admin";
+    }
   }
 }
 
@@ -84,6 +102,7 @@ function renderApp() {
                     <li><a href="#" class="sidebar-link" data-tab="students">👥 Students</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="subjects">📖 Subjects</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
                 </ul>
             </aside>
 
@@ -141,6 +160,12 @@ function setupEventListeners() {
     } else if (e.target.classList.contains("delete-note-btn")) {
       deleteNote(e.target.getAttribute("data-note-id"));
     }
+    // Resource actions
+    else if (e.target.classList.contains("edit-resource-btn")) {
+      editResource(e.target.getAttribute("data-resource-id"));
+    } else if (e.target.classList.contains("delete-resource-btn")) {
+      deleteResource(e.target.getAttribute("data-resource-id"));
+    }
   });
 }
 
@@ -197,6 +222,13 @@ function switchTab(tabName) {
         setupNotesListeners();
         loadNotes();
       }, 10);
+    } else if (tabName === "resources") {
+      content = renderResourcesTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        setupResourcesListeners();
+        loadResources();
+      }, 10);
     } else {
       console.error("Unknown tab:", tabName);
       mainContent.innerHTML = `<div class="error-message">Unknown tab: ${tabName}</div>`;
@@ -238,6 +270,10 @@ function renderDashboard() {
                     <h3>Total Notes</h3>
                     <p class="stat-number" id="totalNotes">0</p>
                 </div>
+                <div class="stat-card">
+                    <h3>Resources</h3>
+                    <p class="stat-number" id="totalResources">0</p>
+                </div>
             </div>
         </div>
     `;
@@ -245,10 +281,11 @@ function renderDashboard() {
 
 async function loadDashboard() {
   try {
-    const [studentsRes, subjectsRes, notesRes] = await Promise.all([
-      fetch(`${API_BASE}/users`, { headers: getAuthHeaders() }),
-      fetch(`${API_BASE}/subjects`, { headers: getAuthHeaders() }),
-      fetch(`${API_BASE}/notes`, { headers: getAuthHeaders() }),
+    const [studentsRes, subjectsRes, notesRes, resourcesRes] = await Promise.all([
+      authFetch(`${API_BASE}/users`, { headers: getAuthHeaders() }),
+      authFetch(`${API_BASE}/subjects`, { headers: getAuthHeaders() }),
+      authFetch(`${API_BASE}/notes`, { headers: getAuthHeaders() }),
+      authFetch(`${API_BASE}/resources`, { headers: getAuthHeaders() }),
     ]);
 
     const studentsData = await studentsRes.json();
@@ -258,6 +295,8 @@ async function loadDashboard() {
     const students = studentsData.data || [];
     const subjects = subjectsData.data || [];
     const notes = notesData.data || [];
+    const resourcesData = await resourcesRes.json();
+    const resources = resourcesData.data || [];
 
     const totalStudentsEl = document.getElementById("totalStudents");
     const pendingStudentsEl = document.getElementById("pendingStudents");
@@ -284,6 +323,10 @@ async function loadDashboard() {
 
     if (totalNotesEl) {
       totalNotesEl.textContent = notes.length;
+    }
+    const totalResourcesEl = document.getElementById("totalResources");
+    if (totalResourcesEl) {
+      totalResourcesEl.textContent = resources.length;
     }
   } catch (error) {
     console.error("Failed to load dashboard:", error);
@@ -344,7 +387,7 @@ function setupStudentsListeners() {
 
 async function loadStudents() {
   try {
-    const response = await fetch(`${API_BASE}/users`, {
+    const response = await authFetch(`${API_BASE}/users`, {
       headers: getAuthHeaders(),
     });
 
@@ -413,7 +456,7 @@ async function confirmStudent(id) {
   if (!confirm("Confirm this student's account?")) return;
 
   try {
-    const response = await fetch(`${API_BASE}/users/${id}`, {
+    const response = await authFetch(`${API_BASE}/users/${id}`, {
       method: "PUT",
       headers: {
         ...getAuthHeaders(),
@@ -437,7 +480,7 @@ async function deactivateStudent(id) {
   if (!confirm("Deactivate this student's account?")) return;
 
   try {
-    const response = await fetch(`${API_BASE}/users/${id}`, {
+    const response = await authFetch(`${API_BASE}/users/${id}`, {
       method: "PUT",
       headers: {
         ...getAuthHeaders(),
@@ -459,7 +502,7 @@ async function deactivateStudent(id) {
 
 async function activateStudent(id) {
   try {
-    const response = await fetch(`${API_BASE}/users/${id}`, {
+    const response = await authFetch(`${API_BASE}/users/${id}`, {
       method: "PUT",
       headers: {
         ...getAuthHeaders(),
@@ -488,7 +531,7 @@ async function deleteStudent(id) {
     return;
 
   try {
-    const response = await fetch(`${API_BASE}/users/${id}`, {
+    const response = await authFetch(`${API_BASE}/users/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -605,7 +648,7 @@ async function loadSubjects() {
     if (classLevel) params.append("class", classLevel);
     if (params.toString()) url += "?" + params.toString();
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       headers: getAuthHeaders(),
     });
 
@@ -771,7 +814,7 @@ async function saveSubject(event) {
     const url = id ? `${API_BASE}/subjects/${id}` : `${API_BASE}/subjects`;
     const method = id ? "PUT" : "POST";
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       method,
       headers: {
         ...getAuthHeaders(),
@@ -801,7 +844,7 @@ async function deleteSubject(id) {
   if (!confirm("Are you sure you want to delete this subject?")) return;
 
   try {
-    const response = await fetch(`${API_BASE}/subjects/${id}`, {
+    const response = await authFetch(`${API_BASE}/subjects/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -894,7 +937,7 @@ async function loadNotes() {
     if (classLevel) params.append("class", classLevel);
     if (params.toString()) url += "?" + params.toString();
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       headers: getAuthHeaders(),
     });
 
@@ -1061,7 +1104,7 @@ async function saveNote(event) {
     const url = id ? `${API_BASE}/notes/${id}` : `${API_BASE}/notes`;
     const method = id ? "PUT" : "POST";
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       method,
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -1090,7 +1133,7 @@ async function deleteNote(id) {
   if (!confirm("Are you sure you want to delete this note?")) return;
 
   try {
-    const response = await fetch(`${API_BASE}/notes/${id}`, {
+    const response = await authFetch(`${API_BASE}/notes/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
@@ -1107,12 +1150,231 @@ async function deleteNote(id) {
 }
 
 // ============================================
+// RESOURCES MANAGEMENT
+// ============================================
+
+function renderResourcesTab() {
+  return `
+        <div id="resources" class="tab-content">
+            <div class="section-header">
+                <h2>Resources (Links)</h2>
+                <button class="btn-primary" id="addResourceBtn">+ Add Resource</button>
+            </div>
+            <div class="filters">
+                <select id="resourceLevelFilter">
+                    <option value="">All Levels</option>
+                    <option value="o-level">O-Level</option>
+                    <option value="a-level">A-Level</option>
+                </select>
+                <select id="resourceClassFilter">
+                    <option value="">All Classes</option>
+                    <option value="s1">S1</option>
+                    <option value="s2">S2</option>
+                    <option value="s3">S3</option>
+                    <option value="s4">S4</option>
+                    <option value="s5">S5</option>
+                    <option value="s6">S6</option>
+                </select>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>URL</th>
+                            <th>Subject</th>
+                            <th>Level</th>
+                            <th>Class</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resourcesTableBody">
+                        <tr><td colspan="6" class="loading">Loading resources...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function setupResourcesListeners() {
+  const addResourceBtn = document.getElementById("addResourceBtn");
+  const resourceLevelFilter = document.getElementById("resourceLevelFilter");
+  const resourceClassFilter = document.getElementById("resourceClassFilter");
+  if (addResourceBtn) addResourceBtn.addEventListener("click", showAddResourceModal);
+  if (resourceLevelFilter) resourceLevelFilter.addEventListener("change", loadResources);
+  if (resourceClassFilter) resourceClassFilter.addEventListener("change", loadResources);
+}
+
+async function loadResources() {
+  try {
+    const level = document.getElementById("resourceLevelFilter")?.value || "";
+    const classLevel = document.getElementById("resourceClassFilter")?.value || "";
+    let url = `${API_BASE}/resources`;
+    const params = new URLSearchParams();
+    if (level) params.append("level", level);
+    if (classLevel) params.append("class", classLevel);
+    if (params.toString()) url += "?" + params.toString();
+    const response = await authFetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) throw new Error("Failed to load resources");
+    const data = await response.json();
+    allResources = data.data || [];
+    displayResources(allResources);
+  } catch (error) {
+    console.error("Failed to load resources:", error);
+    showError("Failed to load resources");
+  }
+}
+
+function displayResources(resources) {
+  const tbody = document.getElementById("resourcesTableBody");
+  if (!tbody) return;
+  if (resources.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No resources found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = resources.map((r) => `
+    <tr>
+        <td>${r.title}</td>
+        <td><a href="${r.url}" target="_blank" rel="noopener">${r.url.substring(0, 40)}${r.url.length > 40 ? "..." : ""}</a></td>
+        <td>${r.subject || "-"}</td>
+        <td>${r.level}</td>
+        <td>${r.class.toUpperCase()}</td>
+        <td>
+            <button class="btn-sm btn-primary edit-resource-btn" data-resource-id="${r.id}">Edit</button>
+            <button class="btn-sm btn-danger delete-resource-btn" data-resource-id="${r.id}">Delete</button>
+        </td>
+    </tr>
+  `).join("");
+}
+
+function showAddResourceModal() {
+  showResourceModal("Add Resource", null);
+}
+
+function editResource(id) {
+  const resource = allResources.find((r) => r.id === id);
+  if (!resource) return;
+  showResourceModal("Edit Resource", resource);
+}
+
+function showResourceModal(title, resource) {
+  const combos = ["PCM","PCB","BCG","HEG","HEL","MEG","DEG","MPG","BCM","HGL","AKR"];
+  const comboOpts = combos.map((c) => `<option value="${c}" ${resource && resource.combination === c ? "selected" : ""}>${c}</option>`).join("");
+  const modalContent = `
+        <form id="resourceForm">
+            <input type="hidden" id="resourceId" value="${resource ? resource.id : ""}">
+            <div class="form-group">
+                <label>Title *</label>
+                <input type="text" id="resourceTitle" value="${resource ? resource.title : ""}" required>
+            </div>
+            <div class="form-group">
+                <label>URL *</label>
+                <input type="url" id="resourceUrl" value="${resource ? resource.url : ""}" placeholder="https://youtube.com/..." required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="resourceDescription" rows="2">${resource ? resource.description || "" : ""}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="resourceSubject" value="${resource ? resource.subject || "" : ""}" placeholder="e.g. Physics">
+            </div>
+            <div class="form-group">
+                <label>Level *</label>
+                <select id="resourceLevel" required>
+                    <option value="">Select Level</option>
+                    <option value="o-level" ${resource && resource.level === "o-level" ? "selected" : ""}>O-Level</option>
+                    <option value="a-level" ${resource && resource.level === "a-level" ? "selected" : ""}>A-Level</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Class *</label>
+                <select id="resourceClass" required>
+                    <option value="">Select Class</option>
+                    <option value="s1" ${resource && resource.class === "s1" ? "selected" : ""}>S1</option>
+                    <option value="s2" ${resource && resource.class === "s2" ? "selected" : ""}>S2</option>
+                    <option value="s3" ${resource && resource.class === "s3" ? "selected" : ""}>S3</option>
+                    <option value="s4" ${resource && resource.class === "s4" ? "selected" : ""}>S4</option>
+                    <option value="s5" ${resource && resource.class === "s5" ? "selected" : ""}>S5</option>
+                    <option value="s6" ${resource && resource.class === "s6" ? "selected" : ""}>S6</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Combination (A-Level only)</label>
+                <select id="resourceCombination">
+                    <option value="">Any</option>
+                    ${comboOpts}
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="cancelResourceBtn">Cancel</button>
+                <button type="submit" class="btn-primary">Save Resource</button>
+            </div>
+        </form>
+    `;
+  showModal(title, modalContent, () => {
+    document.getElementById("resourceForm").addEventListener("submit", saveResource);
+    document.getElementById("cancelResourceBtn").addEventListener("click", closeModal);
+  });
+}
+
+async function saveResource(event) {
+  event.preventDefault();
+  const id = document.getElementById("resourceId").value;
+  const body = {
+    title: document.getElementById("resourceTitle").value,
+    url: document.getElementById("resourceUrl").value,
+    description: document.getElementById("resourceDescription").value,
+    subject: document.getElementById("resourceSubject").value || null,
+    level: document.getElementById("resourceLevel").value,
+    class: document.getElementById("resourceClass").value,
+    combination: document.getElementById("resourceCombination").value || null,
+  };
+  try {
+    const url = id ? `${API_BASE}/resources/${id}` : `${API_BASE}/resources`;
+    const method = id ? "PUT" : "POST";
+    const response = await authFetch(url, {
+      method,
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || "Failed to save resource");
+    }
+    showSuccess(id ? "Resource updated" : "Resource added");
+    closeModal();
+    loadResources();
+    loadDashboard();
+  } catch (error) {
+    showError(error.message || "Failed to save resource");
+  }
+}
+
+async function deleteResource(id) {
+  if (!confirm("Delete this resource?")) return;
+  try {
+    const response = await authFetch(`${API_BASE}/resources/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (!response.ok) throw new Error("Failed to delete");
+    showSuccess("Resource deleted");
+    loadResources();
+    loadDashboard();
+  } catch (error) {
+    showError("Failed to delete resource");
+  }
+}
+
+// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
 function getAuthHeaders() {
   return {
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
+    Authorization: `Bearer ${getToken()}`,
     "Content-Type": "application/json",
   };
 }

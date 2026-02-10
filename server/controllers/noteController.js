@@ -19,6 +19,7 @@ exports.getAllNotes = async (req, res, next) => {
       level,
       class: classLevel,
       subject,
+      combination,
       search,
       limit = 20,
       page = 1,
@@ -30,13 +31,27 @@ exports.getAllNotes = async (req, res, next) => {
     if (level) where.level = level;
     if (classLevel) where.class = classLevel;
     if (subject) where.subject = subject;
-
+    // For A-level: show notes with no combination (all) OR matching combination
+    const andConditions = [];
+    if (combination) {
+      andConditions.push({
+        [Op.or]: [
+          { combination: null },
+          { combination },
+        ],
+      });
+    }
     // Text search (basic title/description search)
     if (search) {
-      where[Op.or] = [
-        { title: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
-      ];
+      andConditions.push({
+        [Op.or]: [
+          { title: { [Op.iLike]: `%${search}%` } },
+          { description: { [Op.iLike]: `%${search}%` } },
+        ],
+      });
+    }
+    if (andConditions.length) {
+      where[Op.and] = andConditions;
     }
 
     const limitNum = parseInt(limit);
@@ -241,6 +256,26 @@ exports.downloadNote = async (req, res, next) => {
 
     // Send file
     res.download(note.filePath, note.originalFileName);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    View note (inline - for reading in browser)
+// @route   GET /api/notes/:id/view
+// @access  Private
+exports.viewNote = async (req, res, next) => {
+  try {
+    const note = await Note.findByPk(req.params.id);
+
+    if (!note) {
+      return next(new ErrorResponse("Note not found", 404));
+    }
+
+    await note.incrementViews();
+
+    res.setHeader("Content-Disposition", `inline; filename="${note.originalFileName}"`);
+    res.sendFile(path.resolve(process.cwd(), note.filePath));
   } catch (error) {
     next(error);
   }

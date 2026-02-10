@@ -13,9 +13,10 @@ function setToken(token) {
   localStorage.setItem("token", token);
 }
 
-// Remove auth token from localStorage
+// Remove auth token and user from localStorage
 function removeToken() {
   localStorage.removeItem("token");
+  localStorage.removeItem("user");
 }
 
 // Check if user is authenticated
@@ -89,4 +90,35 @@ function isValidEmail(email) {
 function isStrongPassword(password) {
   // At least 6 characters
   return password.length >= 6;
+}
+
+// Get login redirect URL (preserves admin/student context)
+function getLoginRedirectUrl() {
+  const path = window.location.pathname || "";
+  if (path.includes("admin-dashboard")) return "/pages/login.html?role=admin";
+  if (path.includes("student-dashboard")) return "/pages/login.html?role=student";
+  return "/pages/login.html";
+}
+
+// Authenticated fetch - adds Bearer token, handles 401 by redirecting to login
+async function authFetch(url, options = {}) {
+  const token = getToken();
+  const headers = {
+    ...options.headers,
+    Authorization: token ? `Bearer ${token}` : "",
+  };
+  let res;
+  try {
+    res = await fetch(url, { ...options, headers });
+  } catch (networkError) {
+    // Network error - don't clear token, let caller handle
+    throw networkError;
+  }
+  if (res.status === 401) {
+    removeToken();
+    if (!window.location.pathname.includes("login.html")) {
+      window.location.href = getLoginRedirectUrl();
+    }
+  }
+  return res;
 }

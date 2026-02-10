@@ -7,6 +7,7 @@ const { connectDB } = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const noteRoutes = require('./routes/noteRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
 const userRoutes = require('./routes/userRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
@@ -57,6 +58,7 @@ app.get('/api/test', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/resources', resourceRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/dashboard', dashboardRoutes);

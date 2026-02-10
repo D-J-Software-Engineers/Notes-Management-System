@@ -1,17 +1,21 @@
 const API_URL = 'http://localhost:5000/api';
 
-const combinations = {
-    'PCM': 'Physics, Chemistry, Math',
-    'PCB': 'Physics, Chemistry, Biology',
-    'BCG': 'Biology, Chemistry, Geography',
-    'HEG': 'History, Economics, Geography',
-    'HEL': 'History, Economics, Literature',
-    'MEG': 'Math, Economics, Geography',
-    'DEG': 'Divinity, Economics, Geography',
-    'MPG': 'Math, Physics, Geography',
-    'BCM': 'Biology, Chemistry, Math',
-    'HGL': 'History, Geography, Literature',
-    'AKR': 'Art, Kiswahili, RE'
+const combinationsByStream = {
+    sciences: {
+        'PCM': 'Physics, Chemistry, Math',
+        'PCB': 'Physics, Chemistry, Biology',
+        'BCG': 'Biology, Chemistry, Geography',
+        'MPG': 'Math, Physics, Geography',
+        'BCM': 'Biology, Chemistry, Math'
+    },
+    arts: {
+        'HEG': 'History, Economics, Geography',
+        'HEL': 'History, Economics, Literature',
+        'MEG': 'Math, Economics, Geography',
+        'DEG': 'Divinity, Economics, Geography',
+        'HGL': 'History, Geography, Literature',
+        'AKR': 'Art, Kiswahili, RE'
+    }
 };
 
 class RegisterPage {
@@ -72,13 +76,18 @@ class RegisterPage {
                                     <option value="">Select Level First</option>
                                 </select>
                             </div>
+                            <div class="mb-3 d-none" id="streamGroup">
+                                <label class="form-label">Stream</label>
+                                <select class="form-select" id="stream">
+                                    <option value="">Select Stream</option>
+                                    <option value="sciences">Sciences</option>
+                                    <option value="arts">Arts</option>
+                                </select>
+                            </div>
                             <div class="mb-3 d-none" id="combinationGroup">
                                 <label class="form-label">Subject Combination</label>
                                 <select class="form-select" id="combination">
-                                    <option value="">Select Combination</option>
-                                    ${Object.entries(combinations).map(([code, name]) => 
-                                        `<option value="${code}">${code} (${name})</option>`
-                                    ).join('')}
+                                    <option value="">Select Stream First</option>
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-primary w-100" id="submitBtn">Register</button>
@@ -94,16 +103,25 @@ class RegisterPage {
 
     attachEvents() {
         document.getElementById('level').addEventListener('change', (e) => this.updateClassOptions(e.target.value));
+        document.getElementById('class').addEventListener('change', (e) => this.updateStreamAndCombination(e.target.value));
+        document.getElementById('stream').addEventListener('change', (e) => this.updateCombinationOptions(e.target.value));
         document.getElementById('registerForm').addEventListener('submit', (e) => this.handleSubmit(e));
     }
 
     updateClassOptions(level) {
         const classSelect = document.getElementById('class');
+        const streamGroup = document.getElementById('streamGroup');
         const combinationGroup = document.getElementById('combinationGroup');
         const combinationSelect = document.getElementById('combination');
         
         classSelect.disabled = false;
         classSelect.innerHTML = '<option value="">Select Class</option>';
+        streamGroup.classList.add('d-none');
+        combinationGroup.classList.add('d-none');
+        document.getElementById('stream').value = '';
+        combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+        combinationSelect.removeAttribute('required');
+        document.getElementById('stream').removeAttribute('required');
         
         if (level === 'o-level') {
             classSelect.innerHTML += `
@@ -112,15 +130,51 @@ class RegisterPage {
                 <option value="s3">S3</option>
                 <option value="s4">S4</option>
             `;
-            combinationGroup.classList.add('d-none');
-            combinationSelect.removeAttribute('required');
         } else if (level === 'a-level') {
             classSelect.innerHTML += `
                 <option value="s5">S5</option>
                 <option value="s6">S6</option>
             `;
+        }
+    }
+
+    updateStreamAndCombination(classValue) {
+        const streamGroup = document.getElementById('streamGroup');
+        const combinationGroup = document.getElementById('combinationGroup');
+        const combinationSelect = document.getElementById('combination');
+        const streamSelect = document.getElementById('stream');
+        
+        if (classValue === 's5' || classValue === 's6') {
+            streamGroup.classList.remove('d-none');
+            streamSelect.setAttribute('required', 'required');
+            streamSelect.value = '';
+            combinationGroup.classList.add('d-none');
+            combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+            combinationSelect.removeAttribute('required');
+        } else {
+            streamGroup.classList.add('d-none');
+            combinationGroup.classList.add('d-none');
+            streamSelect.removeAttribute('required');
+            combinationSelect.removeAttribute('required');
+        }
+    }
+
+    updateCombinationOptions(streamValue) {
+        const combinationGroup = document.getElementById('combinationGroup');
+        const combinationSelect = document.getElementById('combination');
+        
+        if (streamValue === 'sciences' || streamValue === 'arts') {
+            const combos = combinationsByStream[streamValue];
             combinationGroup.classList.remove('d-none');
             combinationSelect.setAttribute('required', 'required');
+            combinationSelect.innerHTML = '<option value="">Select Combination</option>' +
+                Object.entries(combos).map(([code, name]) => 
+                    `<option value="${code}">${code} (${name})</option>`
+                ).join('');
+        } else {
+            combinationGroup.classList.add('d-none');
+            combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+            combinationSelect.removeAttribute('required');
         }
     }
 
@@ -138,7 +192,10 @@ class RegisterPage {
         };
         
         if (payload.level === 'a-level') {
+            payload.stream = document.getElementById('stream').value;
             payload.combination = document.getElementById('combination').value;
+            // Server expects "science" not "sciences"
+            if (payload.stream === 'sciences') payload.stream = 'science';
         }
         
         submitBtn.disabled = true;

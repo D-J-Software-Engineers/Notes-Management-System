@@ -32,6 +32,9 @@
             <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
           </li>
           <li>
+            <a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a>
+          </li>
+          <li>
             <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
           </li>
         </ul>
@@ -90,6 +93,14 @@
           <div id="notesContainer" class="notes-grid"></div>
         </section>
 
+        <!-- Resources tab -->
+        <section id="resourcesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Learning Resources</h2>
+          </div>
+          <div id="resourcesContainer" class="notes-grid"></div>
+        </section>
+
         <!-- Profile tab -->
         <section id="profileTab" class="tab-content" style="display: none">
           <div class="profile-card">
@@ -115,6 +126,7 @@
 
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/auth.js"></script>
+    <script>const API_BASE = "/api";</script>
     <script>
       let allNotes = [];
 
@@ -179,17 +191,21 @@
           );
         }
 
-        // Global click handler for download buttons
+        // Global click handlers for notes
         document.addEventListener("click", (e) => {
           if (e.target.classList.contains("download-note-btn")) {
             const noteId = e.target.getAttribute("data-note-id");
             const noteTitle = e.target.getAttribute("data-note-title");
             downloadNote(noteId, noteTitle);
+          } else if (e.target.classList.contains("view-note-btn")) {
+            const noteId = e.target.getAttribute("data-note-id");
+            viewNote(noteId);
           }
         });
 
-        // Load notes for this student (filtered by level & class)
+        // Load notes and resources for this student (filtered by level, class, combination)
         await loadNotesForStudent(user);
+        await loadResourcesForStudent(user);
       });
 
       function switchTab(tab) {
@@ -222,18 +238,24 @@
           const params = new URLSearchParams();
           if (user.level) params.append("level", user.level);
           if (user.class) params.append("class", user.class);
+          if (user.combination) params.append("combination", user.combination);
 
           let url = `${API_BASE}/notes`;
           const query = params.toString();
           if (query) url += "?" + query;
 
-          const res = await fetch(url, {
+          const res = await authFetch(url, {
             headers: {
               Authorization: `Bearer ${getToken()}`,
             },
           });
 
           if (!res.ok) {
+            if (res.status === 401) {
+              removeToken();
+              window.location.href = "/pages/login.html";
+              return;
+            }
             throw new Error("Failed to load notes");
           }
 
@@ -247,6 +269,80 @@
           container.innerHTML =
             '<div class="no-data">Could not load notes. Please try again later.</div>';
         }
+      }
+
+      async function loadResourcesForStudent(user) {
+        const container = document.getElementById("resourcesContainer");
+        if (!container) return;
+
+        container.innerHTML = '<div class="loading">Loading resources...</div>';
+
+        try {
+          const params = new URLSearchParams();
+          if (user.level) params.append("level", user.level);
+          if (user.class) params.append("class", user.class);
+          if (user.combination) params.append("combination", user.combination);
+
+          let url = `${API_BASE}/resources`;
+          const query = params.toString();
+          if (query) url += "?" + query;
+
+          const res = await authFetch(url, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+          });
+
+          if (!res.ok) {
+            if (res.status === 401) {
+              removeToken();
+              window.location.href = "/pages/login.html";
+              return;
+            }
+            throw new Error("Failed to load resources");
+          }
+
+          const data = await res.json();
+          const resources = data.data || [];
+          renderResources(resources);
+        } catch (err) {
+          container.innerHTML =
+            '<div class="no-data">Could not load resources.</div>';
+        }
+      }
+
+      function renderResources(resources) {
+        const container = document.getElementById("resourcesContainer");
+        if (!container) return;
+
+        if (!resources.length) {
+          container.innerHTML =
+            '<div class="no-data">No resources for your class yet.</div>';
+          return;
+        }
+
+        container.innerHTML = resources
+          .map(
+            (r) => `
+          <article class="note-card resource-card">
+            <div class="note-header">
+              <h3>${r.title}</h3>
+              ${r.subject ? `<span class="note-badge">${r.subject}</span>` : ""}
+            </div>
+            <p class="note-description">${r.description || "External link"}</p>
+            <div class="note-meta">
+              <span>Level: ${r.level}</span>
+              <span>Class: ${r.class.toUpperCase()}</span>
+            </div>
+            <div class="note-actions">
+              <a href="${r.url}" target="_blank" rel="noopener" class="btn-sm btn-primary">
+                Open Link →
+              </a>
+            </div>
+          </article>
+        `,
+          )
+          .join("");
       }
 
       function renderNotes(notes) {
@@ -282,6 +378,12 @@
             </div>
             <div class="note-actions">
               <button
+                class="btn-sm btn-primary view-note-btn"
+                data-note-id="${note.id}"
+              >
+                View
+              </button>
+              <button
                 class="btn-sm btn-primary download-note-btn"
                 data-note-id="${note.id}"
                 data-note-title="${note.title.replace(/"/g, "&quot;")}"
@@ -314,9 +416,30 @@
         renderNotes(filtered);
       }
 
+      async function viewNote(id) {
+        try {
+          const res = await authFetch(`${API_BASE}/notes/${id}/view`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) {
+            if (res.status === 401) {
+              removeToken();
+              window.location.href = "/pages/login.html";
+              return;
+            }
+            throw new Error("Failed to load note");
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          window.open(url, "_blank", "noopener,noreferrer");
+        } catch (err) {
+          alert(err.message || "Could not view note");
+        }
+      }
+
       async function downloadNote(id, title) {
         try {
-          const res = await fetch(`${API_BASE}/notes/${id}/download`, {
+          const res = await authFetch(`${API_BASE}/notes/${id}/download`, {
             headers: {
               Authorization: `Bearer ${getToken()}`,
             },

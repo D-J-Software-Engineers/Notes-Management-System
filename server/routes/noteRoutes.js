@@ -7,6 +7,7 @@ const {
   updateNote,
   deleteNote,
   downloadNote,
+  viewNote,
   getRecentNotes,
   getPopularNotes,
 } = require("../controllers/noteController");
@@ -17,8 +18,9 @@ const { validateNote } = require("../middleware/validation");
 router.get("/recent", protect, getRecentNotes);
 router.get("/popular", protect, getPopularNotes);
 router.get("/", protect, getAllNotes);
-router.get("/:id", protect, getNote);
+router.get("/:id/view", protect, viewNote);
 router.get("/:id/download", protect, downloadNote);
+router.get("/:id", protect, getNote);
 
 router.post(
   "/",

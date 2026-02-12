@@ -13,8 +13,22 @@ window.addEventListener("error", function (e) {
   }
 });
 
-// Ensure form submission works even if extensions interfere
+// Update login page title based on role (student vs admin)
 document.addEventListener("DOMContentLoaded", function () {
+  const params = new URLSearchParams(window.location.search);
+  const role = params.get("role");
+  const titleEl = document.getElementById("loginTitle");
+  const subtitleEl = document.getElementById("loginSubtitle");
+  if (role === "admin" && titleEl && subtitleEl) {
+    titleEl.textContent = "🔐 Admin Login";
+    subtitleEl.textContent = "Access your admin account";
+    const registerLink = document.getElementById("registerLink");
+    if (registerLink) registerLink.style.display = "none";
+  } else if (role === "student" && titleEl && subtitleEl) {
+    titleEl.textContent = "📚 Student Login";
+    subtitleEl.textContent = "Access your student account";
+  }
+
   const form = document.getElementById("loginForm");
   if (form) {
     // Remove inline onsubmit handler and use addEventListener instead

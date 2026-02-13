@@ -66,9 +66,7 @@ const User = sequelize.define('User', {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
       }
-      if (user.role === 'admin') {
-        user.isConfirmed = true;
-      }
+      // Removed insecure auto-confirmation for admins
     },
     beforeUpdate: async (user) => {
       if (user.changed('password')) {
@@ -79,11 +77,11 @@ const User = sequelize.define('User', {
   }
 });
 
-User.prototype.comparePassword = async function(enteredPassword) {
+User.prototype.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-User.prototype.generateAuthToken = function() {
+User.prototype.generateAuthToken = function () {
   return jwt.sign(
     { id: this.id, role: this.role },
     JWT_CONFIG.SECRET,
@@ -91,33 +89,33 @@ User.prototype.generateAuthToken = function() {
   );
 };
 
-User.prototype.toJSON = function() {
+User.prototype.toJSON = function () {
   const values = Object.assign({}, this.get());
   delete values.password;
   return values;
 };
 
-User.findByCredentials = async function(email, password) {
+User.findByCredentials = async function (email, password) {
   const user = await this.findOne({ where: { email } });
-  
+
   if (!user) {
     throw new Error('Invalid email or password');
   }
-  
+
   if (!user.isActive) {
     throw new Error('Account is deactivated. Please contact admin.');
   }
-  
+
   if (!user.isConfirmed) {
     throw new Error('Account pending approval. Please contact admin.');
   }
-  
+
   const isMatch = await user.comparePassword(password);
-  
+
   if (!isMatch) {
     throw new Error('Invalid email or password');
   }
-  
+
   return user;
 };
 

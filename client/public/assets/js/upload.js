@@ -5,6 +5,24 @@
 
 const UPLOAD_API_BASE = "/api";
 
+const combinationsByStream = {
+  sciences: {
+    'PCM': 'Physics, Chemistry, Math',
+    'PCB': 'Physics, Chemistry, Biology',
+    'BCG': 'Biology, Chemistry, Geography',
+    'MPG': 'Math, Physics, Geography',
+    'BCM': 'Biology, Chemistry, Math'
+  },
+  arts: {
+    'HEG': 'History, Economics, Geography',
+    'HEL': 'History, Economics, Literature',
+    'MEG': 'Math, Economics, Geography',
+    'DEG': 'Divinity, Economics, Geography',
+    'HGL': 'History, Geography, Literature',
+    'AKR': 'Art, Kiswahili, RE'
+  }
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Ensure only admins can access this page
   if (typeof getCurrentUser === "function") {
@@ -19,6 +37,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const levelSelect = document.getElementById("level");
   const classSelect = document.getElementById("class");
+  const streamDiv = document.getElementById("streamDiv"); // New container
+  const streamSelect = document.getElementById("stream"); // New select
+  const combinationDiv = document.getElementById("combinationDiv"); // Renamed container
+  const combinationSelect = document.getElementById("combination"); // Changed to select
+
   const uploadForm = document.getElementById("uploadForm");
   const backBtn = document.getElementById("backBtn");
   const logoutBtn = document.getElementById("logoutBtn");
@@ -37,6 +60,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     levelSelect.addEventListener("change", () => {
       const level = levelSelect.value;
       classSelect.innerHTML = '<option value="">Select class</option>';
+
+      // Reset Stream/Combination on level change
+      if (streamDiv) streamDiv.style.display = 'none';
+      if (combinationDiv) combinationDiv.style.display = 'none';
+      if (streamSelect) streamSelect.value = '';
+      if (combinationSelect) combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+
       if (level === "o-level") {
         classSelect.innerHTML += `
           <option value="s1">S1</option>
@@ -49,6 +79,26 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="s5">S5</option>
           <option value="s6">S6</option>
         `;
+        if (streamDiv) streamDiv.style.display = 'block';
+      }
+    });
+  }
+
+  if (streamSelect) {
+    streamSelect.addEventListener("change", () => {
+      const stream = streamSelect.value;
+      if (combinationDiv) {
+        if (stream && combinationsByStream[stream]) {
+          combinationDiv.style.display = 'block';
+          const combos = combinationsByStream[stream];
+          combinationSelect.innerHTML = '<option value="">Select Combination</option>' +
+            Object.entries(combos).map(([code, name]) =>
+              `<option value="${code}">${code} (${name})</option>`
+            ).join('');
+        } else {
+          combinationDiv.style.display = 'none';
+          combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+        }
       }
     });
   }
@@ -98,9 +148,8 @@ async function handleUploadSubmit(e) {
   } catch (err) {
     console.error("Upload failed", err);
     if (messageEl) {
-      messageEl.innerHTML = `<div class="error-message">${
-        err.message || "Failed to upload note"
-      }</div>`;
+      messageEl.innerHTML = `<div class="error-message">${err.message || "Failed to upload note"
+        }</div>`;
     }
   }
 }

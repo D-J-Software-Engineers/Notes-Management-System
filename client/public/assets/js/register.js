@@ -35,7 +35,7 @@ class RegisterPage {
                 .register-card { max-width: 500px; margin: 50px auto; }
             </style>
         `;
-        
+
         document.head.insertAdjacentHTML('beforeend', styles);
         document.getElementById('app').innerHTML = this.getLayout();
         this.attachEvents();
@@ -84,6 +84,14 @@ class RegisterPage {
                                     <option value="arts">Arts</option>
                                 </select>
                             </div>
+                            <div class="mb-3 d-none" id="streamGroup">
+                                <label class="form-label">Stream</label>
+                                <select class="form-select" id="stream">
+                                    <option value="">Select Stream</option>
+                                    <option value="sciences">Sciences</option>
+                                    <option value="arts">Arts</option>
+                                </select>
+                            </div>
                             <div class="mb-3 d-none" id="combinationGroup">
                                 <label class="form-label">Subject Combination</label>
                                 <select class="form-select" id="combination">
@@ -113,7 +121,9 @@ class RegisterPage {
         const streamGroup = document.getElementById('streamGroup');
         const combinationGroup = document.getElementById('combinationGroup');
         const combinationSelect = document.getElementById('combination');
-        
+        const streamGroup = document.getElementById('streamGroup');
+        const streamSelect = document.getElementById('stream');
+
         classSelect.disabled = false;
         classSelect.innerHTML = '<option value="">Select Class</option>';
         streamGroup.classList.add('d-none');
@@ -122,7 +132,7 @@ class RegisterPage {
         combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
         combinationSelect.removeAttribute('required');
         document.getElementById('stream').removeAttribute('required');
-        
+
         if (level === 'o-level') {
             classSelect.innerHTML += `
                 <option value="s1">S1</option>
@@ -143,7 +153,7 @@ class RegisterPage {
         const combinationGroup = document.getElementById('combinationGroup');
         const combinationSelect = document.getElementById('combination');
         const streamSelect = document.getElementById('stream');
-        
+
         if (classValue === 's5' || classValue === 's6') {
             streamGroup.classList.remove('d-none');
             streamSelect.setAttribute('required', 'required');
@@ -162,13 +172,14 @@ class RegisterPage {
     updateCombinationOptions(streamValue) {
         const combinationGroup = document.getElementById('combinationGroup');
         const combinationSelect = document.getElementById('combination');
-        
+
         if (streamValue === 'sciences' || streamValue === 'arts') {
             const combos = combinationsByStream[streamValue];
             combinationGroup.classList.remove('d-none');
+            streamGroup.classList.remove('d-none');
             combinationSelect.setAttribute('required', 'required');
             combinationSelect.innerHTML = '<option value="">Select Combination</option>' +
-                Object.entries(combos).map(([code, name]) => 
+                Object.entries(combos).map(([code, name]) =>
                     `<option value="${code}">${code} (${name})</option>`
                 ).join('');
         } else {
@@ -180,7 +191,7 @@ class RegisterPage {
 
     async handleSubmit(e) {
         e.preventDefault();
-        
+
         const submitBtn = document.getElementById('submitBtn');
         const payload = {
             name: document.getElementById('name').value,
@@ -190,26 +201,26 @@ class RegisterPage {
             level: document.getElementById('level').value,
             class: document.getElementById('class').value
         };
-        
+
         if (payload.level === 'a-level') {
             payload.stream = document.getElementById('stream').value;
             payload.combination = document.getElementById('combination').value;
             // Server expects "science" not "sciences"
             if (payload.stream === 'sciences') payload.stream = 'science';
         }
-        
+
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registering...';
-        
+
         try {
             const res = await fetch(`${API_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
+
             const data = await res.json();
-            
+
             if (data.success) {
                 localStorage.setItem('token', data.data.token);
                 localStorage.setItem('user', JSON.stringify(data.data.user));

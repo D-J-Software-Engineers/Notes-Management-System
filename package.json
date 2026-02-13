@@ -4,9 +4,12 @@
   "description": "Notes management system for Ugandan schools following UNEB curriculum",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js",
+    "start": "pm2 start ecosystem.config.js --env production",
+    "stop": "pm2 stop ecosystem.config.js",
+    "restart": "pm2 restart ecosystem.config.js",
     "dev": "nodemon server/server.js",
-    "seed": "node server/utils/seedDatabase.js"
+    "seed": "node server/utils/seedDatabase.js",
+    "monitor": "pm2 monit"
   },
   "keywords": [
     "education",
@@ -23,11 +26,16 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "format": "^0.2.2",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.35.2"
+    "pm2": "^6.0.14",
+    "sequelize": "^6.35.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

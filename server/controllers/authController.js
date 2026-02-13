@@ -13,8 +13,10 @@ exports.register = async (req, res, next) => {
       combination,
     } = req.body;
 
-    const userRole = role || "student";
-    const isConfirmed = userRole === "admin";
+    // Force role to be student for public registration
+    // Admin accounts should be created via seed script or manually in DB
+    const userRole = "student";
+    const isConfirmed = false; // Always false for new public registrations
 
     const user = await User.create({
       name,

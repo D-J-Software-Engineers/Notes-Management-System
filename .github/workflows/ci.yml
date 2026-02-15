@@ -87,6 +87,7 @@ jobs:
       # 9. Validate environment variables
       - name: Validate environment
         run: |
+          source .env
           node -e "
           const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'];
           const missing = required.filter(key => !process.env[key]);
@@ -96,6 +97,13 @@ jobs:
           }
           console.log('✅ All required environment variables are set');
           "
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: notes_management_test
+          DB_USER: notes_admin
+          DB_PASSWORD: test_password
+          JWT_SECRET: test_jwt_secret_key_for_ci
 
       # 10. Test database connection
       - name: Test database connection

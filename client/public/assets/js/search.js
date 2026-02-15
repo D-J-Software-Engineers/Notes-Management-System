@@ -115,8 +115,7 @@ function applyFilters() {
       return (
         (note.title && note.title.toLowerCase().includes(q)) ||
         (note.subject && note.subject.toLowerCase().includes(q)) ||
-        (note.description &&
-          note.description.toLowerCase().includes(q))
+        (note.description && note.description.toLowerCase().includes(q))
       );
     });
   }
@@ -197,5 +196,3 @@ async function downloadSearchNote(id, title) {
     alert(err.message || "Failed to download note");
   }
 }
-
-

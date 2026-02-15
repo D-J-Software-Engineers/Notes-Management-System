@@ -1,48 +1,48 @@
-const API_URL = 'http://localhost:5000/api';
+const API_URL = "http://localhost:5000/api";
 
 const combinationsByStream = {
-    sciences: {
-        'PCM': 'Physics, Chemistry, Math',
-        'PCB': 'Physics, Chemistry, Biology',
-        'BCG': 'Biology, Chemistry, Geography',
-        'MPG': 'Math, Physics, Geography',
-        'BCM': 'Biology, Chemistry, Math'
-    },
-    arts: {
-        'HEG': 'History, Economics, Geography',
-        'HEL': 'History, Economics, Literature',
-        'MEG': 'Math, Economics, Geography',
-        'DEG': 'Divinity, Economics, Geography',
-        'HGL': 'History, Geography, Literature',
-        'AKR': 'Art, Kiswahili, RE'
-    }
+  sciences: {
+    PCM: "Physics, Chemistry, Math",
+    PCB: "Physics, Chemistry, Biology",
+    BCG: "Biology, Chemistry, Geography",
+    MPG: "Math, Physics, Geography",
+    BCM: "Biology, Chemistry, Math",
+  },
+  arts: {
+    HEG: "History, Economics, Geography",
+    HEL: "History, Economics, Literature",
+    MEG: "Math, Economics, Geography",
+    DEG: "Divinity, Economics, Geography",
+    HGL: "History, Geography, Literature",
+    AKR: "Art, Kiswahili, RE",
+  },
 };
 
 class RegisterPage {
-    constructor() {
-        this.formData = {
-            level: '',
-            class: '',
-            combination: ''
-        };
-        this.render();
-    }
+  constructor() {
+    this.formData = {
+      level: "",
+      class: "",
+      combination: "",
+    };
+    this.render();
+  }
 
-    render() {
-        const styles = `
+  render() {
+    const styles = `
             <style>
                 body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; }
                 .register-card { max-width: 500px; margin: 50px auto; }
             </style>
         `;
 
-        document.head.insertAdjacentHTML('beforeend', styles);
-        document.getElementById('app').innerHTML = this.getLayout();
-        this.attachEvents();
-    }
+    document.head.insertAdjacentHTML("beforeend", styles);
+    document.getElementById("app").innerHTML = this.getLayout();
+    this.attachEvents();
+  }
 
-    getLayout() {
-        return `
+  getLayout() {
+    return `
             <div class="container">
                 <div class="card register-card shadow-lg">
                     <div class="card-body p-5">
@@ -84,14 +84,6 @@ class RegisterPage {
                                     <option value="arts">Arts</option>
                                 </select>
                             </div>
-                            <div class="mb-3 d-none" id="streamGroup">
-                                <label class="form-label">Stream</label>
-                                <select class="form-select" id="stream">
-                                    <option value="">Select Stream</option>
-                                    <option value="sciences">Sciences</option>
-                                    <option value="arts">Arts</option>
-                                </select>
-                            </div>
                             <div class="mb-3 d-none" id="combinationGroup">
                                 <label class="form-label">Subject Combination</label>
                                 <select class="form-select" id="combination">
@@ -107,142 +99,163 @@ class RegisterPage {
                 </div>
             </div>
         `;
-    }
+  }
 
-    attachEvents() {
-        document.getElementById('level').addEventListener('change', (e) => this.updateClassOptions(e.target.value));
-        document.getElementById('class').addEventListener('change', (e) => this.updateStreamAndCombination(e.target.value));
-        document.getElementById('stream').addEventListener('change', (e) => this.updateCombinationOptions(e.target.value));
-        document.getElementById('registerForm').addEventListener('submit', (e) => this.handleSubmit(e));
-    }
+  attachEvents() {
+    document
+      .getElementById("level")
+      .addEventListener("change", (e) =>
+        this.updateClassOptions(e.target.value),
+      );
+    document
+      .getElementById("class")
+      .addEventListener("change", (e) =>
+        this.updateStreamAndCombination(e.target.value),
+      );
+    document
+      .getElementById("stream")
+      .addEventListener("change", (e) =>
+        this.updateCombinationOptions(e.target.value),
+      );
+    document
+      .getElementById("registerForm")
+      .addEventListener("submit", (e) => this.handleSubmit(e));
+  }
 
-    updateClassOptions(level) {
-        const classSelect = document.getElementById('class');
-        const streamGroup = document.getElementById('streamGroup');
-        const combinationGroup = document.getElementById('combinationGroup');
-        const combinationSelect = document.getElementById('combination');
-        const streamGroup = document.getElementById('streamGroup');
-        const streamSelect = document.getElementById('stream');
+  updateClassOptions(level) {
+    const classSelect = document.getElementById("class");
+    const streamGroup = document.getElementById("streamGroup");
+    const combinationGroup = document.getElementById("combinationGroup");
+    const combinationSelect = document.getElementById("combination");
+    const streamSelect = document.getElementById("stream");
 
-        classSelect.disabled = false;
-        classSelect.innerHTML = '<option value="">Select Class</option>';
-        streamGroup.classList.add('d-none');
-        combinationGroup.classList.add('d-none');
-        document.getElementById('stream').value = '';
-        combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
-        combinationSelect.removeAttribute('required');
-        document.getElementById('stream').removeAttribute('required');
+    classSelect.disabled = false;
+    classSelect.innerHTML = '<option value="">Select Class</option>';
+    streamGroup.classList.add("d-none");
+    combinationGroup.classList.add("d-none");
+    document.getElementById("stream").value = "";
+    combinationSelect.innerHTML =
+      '<option value="">Select Stream First</option>';
+    combinationSelect.removeAttribute("required");
+    document.getElementById("stream").removeAttribute("required");
 
-        if (level === 'o-level') {
-            classSelect.innerHTML += `
+    if (level === "o-level") {
+      classSelect.innerHTML += `
                 <option value="s1">S1</option>
                 <option value="s2">S2</option>
                 <option value="s3">S3</option>
                 <option value="s4">S4</option>
             `;
-        } else if (level === 'a-level') {
-            classSelect.innerHTML += `
+    } else if (level === "a-level") {
+      classSelect.innerHTML += `
                 <option value="s5">S5</option>
                 <option value="s6">S6</option>
             `;
-        }
+    }
+  }
+
+  updateStreamAndCombination(classValue) {
+    const streamGroup = document.getElementById("streamGroup");
+    const combinationGroup = document.getElementById("combinationGroup");
+    const combinationSelect = document.getElementById("combination");
+    const streamSelect = document.getElementById("stream");
+
+    if (classValue === "s5" || classValue === "s6") {
+      streamGroup.classList.remove("d-none");
+      streamSelect.setAttribute("required", "required");
+      streamSelect.value = "";
+      combinationGroup.classList.add("d-none");
+      combinationSelect.innerHTML =
+        '<option value="">Select Stream First</option>';
+      combinationSelect.removeAttribute("required");
+    } else {
+      streamGroup.classList.add("d-none");
+      combinationGroup.classList.add("d-none");
+      streamSelect.removeAttribute("required");
+      combinationSelect.removeAttribute("required");
+    }
+  }
+
+  updateCombinationOptions(streamValue) {
+    const combinationGroup = document.getElementById("combinationGroup");
+    const combinationSelect = document.getElementById("combination");
+
+    if (streamValue === "sciences" || streamValue === "arts") {
+      const combos = combinationsByStream[streamValue];
+      combinationGroup.classList.remove("d-none");
+      streamGroup.classList.remove("d-none");
+      combinationSelect.setAttribute("required", "required");
+      combinationSelect.innerHTML =
+        '<option value="">Select Combination</option>' +
+        Object.entries(combos)
+          .map(
+            ([code, name]) =>
+              `<option value="${code}">${code} (${name})</option>`,
+          )
+          .join("");
+    } else {
+      combinationGroup.classList.add("d-none");
+      combinationSelect.innerHTML =
+        '<option value="">Select Stream First</option>';
+      combinationSelect.removeAttribute("required");
+    }
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    const submitBtn = document.getElementById("submitBtn");
+    const payload = {
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+      role: "student",
+      level: document.getElementById("level").value,
+      class: document.getElementById("class").value,
+    };
+
+    if (payload.level === "a-level") {
+      payload.stream = document.getElementById("stream").value;
+      payload.combination = document.getElementById("combination").value;
+      // Server expects "science" not "sciences"
+      if (payload.stream === "sciences") payload.stream = "science";
     }
 
-    updateStreamAndCombination(classValue) {
-        const streamGroup = document.getElementById('streamGroup');
-        const combinationGroup = document.getElementById('combinationGroup');
-        const combinationSelect = document.getElementById('combination');
-        const streamSelect = document.getElementById('stream');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML =
+      '<span class="spinner-border spinner-border-sm me-2"></span>Registering...';
 
-        if (classValue === 's5' || classValue === 's6') {
-            streamGroup.classList.remove('d-none');
-            streamSelect.setAttribute('required', 'required');
-            streamSelect.value = '';
-            combinationGroup.classList.add('d-none');
-            combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
-            combinationSelect.removeAttribute('required');
-        } else {
-            streamGroup.classList.add('d-none');
-            combinationGroup.classList.add('d-none');
-            streamSelect.removeAttribute('required');
-            combinationSelect.removeAttribute('required');
-        }
+    try {
+      const res = await fetch(`${API_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("user", JSON.stringify(data.data.user));
+        window.location.href = "/pages/student-dashboard.html";
+      } else {
+        this.showError(data.message || "Registration failed");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Register";
+      }
+    } catch (err) {
+      this.showError("Network error. Please try again.");
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = "Register";
     }
+  }
 
-    updateCombinationOptions(streamValue) {
-        const combinationGroup = document.getElementById('combinationGroup');
-        const combinationSelect = document.getElementById('combination');
-
-        if (streamValue === 'sciences' || streamValue === 'arts') {
-            const combos = combinationsByStream[streamValue];
-            combinationGroup.classList.remove('d-none');
-            streamGroup.classList.remove('d-none');
-            combinationSelect.setAttribute('required', 'required');
-            combinationSelect.innerHTML = '<option value="">Select Combination</option>' +
-                Object.entries(combos).map(([code, name]) =>
-                    `<option value="${code}">${code} (${name})</option>`
-                ).join('');
-        } else {
-            combinationGroup.classList.add('d-none');
-            combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
-            combinationSelect.removeAttribute('required');
-        }
-    }
-
-    async handleSubmit(e) {
-        e.preventDefault();
-
-        const submitBtn = document.getElementById('submitBtn');
-        const payload = {
-            name: document.getElementById('name').value,
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            role: 'student',
-            level: document.getElementById('level').value,
-            class: document.getElementById('class').value
-        };
-
-        if (payload.level === 'a-level') {
-            payload.stream = document.getElementById('stream').value;
-            payload.combination = document.getElementById('combination').value;
-            // Server expects "science" not "sciences"
-            if (payload.stream === 'sciences') payload.stream = 'science';
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registering...';
-
-        try {
-            const res = await fetch(`${API_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                localStorage.setItem('token', data.data.token);
-                localStorage.setItem('user', JSON.stringify(data.data.user));
-                window.location.href = '/pages/student-dashboard.html';
-            } else {
-                this.showError(data.message || 'Registration failed');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Register';
-            }
-        } catch (err) {
-            this.showError('Network error. Please try again.');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Register';
-        }
-    }
-
-    showError(message) {
-        const errorDiv = document.getElementById('error');
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('d-none');
-        setTimeout(() => errorDiv.classList.add('d-none'), 5000);
-    }
+  showError(message) {
+    const errorDiv = document.getElementById("error");
+    errorDiv.textContent = message;
+    errorDiv.classList.remove("d-none");
+    setTimeout(() => errorDiv.classList.add("d-none"), 5000);
+  }
 }
 
-window.addEventListener('DOMContentLoaded', () => new RegisterPage());
+window.addEventListener("DOMContentLoaded", () => new RegisterPage());

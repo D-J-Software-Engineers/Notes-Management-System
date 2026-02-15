@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "Starting Notes Management System for LAN..."
+echo "Starting soma-digilib for LAN..."
 echo "Ensure you have run 'npm install' first!"
 
 # Get IP Address (Linux/Mac)

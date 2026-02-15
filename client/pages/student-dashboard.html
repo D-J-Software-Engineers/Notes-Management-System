@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Dashboard - Notes Management System</title>
+    <title>Student Dashboard - Nsoma Digilib</title>
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/student.css" />
   </head>
+
   <body>
     <!-- Top navigation styled by student.css -->
     <nav class="student-nav">
       <div class="nav-container">
-        <h1 class="nav-logo">📚 Notes Management System</h1>
+        <h1 class="nav-logo">📚 Nsoma Digilib</h1>
         <div class="nav-user">
           <span id="studentNameNav">Student</span>
           <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -32,7 +33,9 @@
             <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
           </li>
           <li>
-            <a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a>
+            <a href="#" class="sidebar-link" data-tab="resources"
+              >🔗 Resources</a
+            >
           </li>
           <li>
             <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
@@ -75,30 +78,82 @@
               <h3>Available Notes</h3>
               <p class="stat-number" id="notesCount">0</p>
             </div>
+            <div class="stat-card">
+              <h3>Available Resources</h3>
+              <p class="stat-number" id="resourcesCount">0</p>
+            </div>
           </div>
         </section>
 
         <!-- Notes tab -->
         <section id="notesTab" class="tab-content" style="display: none">
-          <div class="section-header">
-            <h2>Your Class Notes</h2>
-            <div class="filters">
-              <input
-                type="text"
-                id="notesSearch"
-                placeholder="Search notes by title or subject..."
-              />
+          <!-- Subject View (Level 1) -->
+          <div id="notesSubjectView">
+            <div class="section-header">
+              <h2>Your Subjects</h2>
+              <p class="section-subtitle">Select a subject to view notes</p>
+            </div>
+            <div id="notesSubjectContainer" class="notes-grid">
+              <!-- Subject Cards will be injected here -->
             </div>
           </div>
-          <div id="notesContainer" class="notes-grid"></div>
+
+          <!-- Notes List View (Level 2) -->
+          <div id="notesListView" style="display: none">
+            <div class="section-header">
+              <div>
+                <button
+                  class="btn-sm btn-secondary"
+                  id="backToNotesSubjectsBtn"
+                >
+                  ← Back to Subjects
+                </button>
+                <h2 style="margin-top: 10px">
+                  Notes: <span id="currentSubjectTitle"></span>
+                </h2>
+              </div>
+              <div class="filters">
+                <input
+                  type="text"
+                  id="notesSearch"
+                  placeholder="Search notes in this subject..."
+                />
+              </div>
+            </div>
+            <div id="notesContainer" class="notes-grid"></div>
+          </div>
         </section>
 
         <!-- Resources tab -->
         <section id="resourcesTab" class="tab-content" style="display: none">
-          <div class="section-header">
-            <h2>Learning Resources</h2>
+          <!-- Subject View (Level 1) -->
+          <div id="resourcesSubjectView">
+            <div class="section-header">
+              <h2>Resource Subjects</h2>
+              <p class="section-subtitle">Select a subject to view resources</p>
+            </div>
+            <div id="resourcesSubjectContainer" class="notes-grid">
+              <!-- Subject Cards injected here -->
+            </div>
           </div>
-          <div id="resourcesContainer" class="notes-grid"></div>
+
+          <!-- Resources List View (Level 2) -->
+          <div id="resourcesListView" style="display: none">
+            <div class="section-header">
+              <div>
+                <button
+                  class="btn-sm btn-secondary"
+                  id="backToResourcesSubjectsBtn"
+                >
+                  ← Back to Subjects
+                </button>
+                <h2 style="margin-top: 10px">
+                  Resources: <span id="currentResourceSubjectTitle"></span>
+                </h2>
+              </div>
+            </div>
+            <div id="resourcesContainer" class="notes-grid"></div>
+          </div>
         </section>
 
         <!-- Profile tab -->
@@ -126,9 +181,11 @@
 
     <script src="/assets/js/utils.js"></script>
     <script src="/assets/js/auth.js"></script>
-    <script>const API_BASE = "/api";</script>
+
     <script>
       let allNotes = [];
+      let allResources = [];
+      let currentNotesSubject = null;
 
       document.addEventListener("DOMContentLoaded", async () => {
         const user = await getCurrentUser();
@@ -141,17 +198,14 @@
         // Fill basic info
         document.getElementById("studentNameNav").textContent = user.name;
         document.getElementById("studentName").textContent = user.name;
-        document.getElementById("studentLevel").textContent =
-          user.level || "-";
+        document.getElementById("studentLevel").textContent = user.level || "-";
         document.getElementById("studentClass").textContent = (
           user.class || "-"
         ).toUpperCase();
         document.getElementById("studentCombination").textContent =
           user.combination || "-";
 
-        const statusText = user.isConfirmed
-          ? "Confirmed"
-          : "Pending Approval";
+        const statusText = user.isConfirmed ? "Confirmed" : "Pending Approval";
         document.getElementById("studentStatus").textContent = statusText;
 
         // Profile tab info
@@ -193,19 +247,48 @@
 
         // Global click handlers for notes
         document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("download-note-btn")) {
-            const noteId = e.target.getAttribute("data-note-id");
-            const noteTitle = e.target.getAttribute("data-note-title");
-            downloadNote(noteId, noteTitle);
-          } else if (e.target.classList.contains("view-note-btn")) {
+          if (e.target.classList.contains("view-note-btn")) {
             const noteId = e.target.getAttribute("data-note-id");
             viewNote(noteId);
+          } else if (e.target.classList.contains("subject-card")) {
+            const subject = e.target.getAttribute("data-subject");
+            const type = e.target.getAttribute("data-type"); // 'notes' or 'resources'
+            if (type === "notes") {
+              openNotesSubject(subject);
+            } else if (type === "resources") {
+              openResourcesSubject(subject);
+            }
+          } else if (e.target.closest(".subject-card")) {
+            // Handle click on child elements of subject card
+            const card = e.target.closest(".subject-card");
+            const subject = card.getAttribute("data-subject");
+            const type = card.getAttribute("data-type");
+            if (type === "notes") {
+              openNotesSubject(subject);
+            } else if (type === "resources") {
+              openResourcesSubject(subject);
+            }
           }
         });
 
         // Load notes and resources for this student (filtered by level, class, combination)
         await loadNotesForStudent(user);
         await loadResourcesForStudent(user);
+
+        // Back buttons
+        const backToNotesBtn = document.getElementById(
+          "backToNotesSubjectsBtn",
+        );
+        if (backToNotesBtn) {
+          backToNotesBtn.addEventListener("click", showNotesSubjects);
+        }
+
+        const backToResourcesBtn = document.getElementById(
+          "backToResourcesSubjectsBtn",
+        );
+        if (backToResourcesBtn) {
+          backToResourcesBtn.addEventListener("click", showResourcesSubjects);
+        }
       });
 
       function switchTab(tab) {
@@ -227,27 +310,43 @@
         if (tabEl) tabEl.style.display = "block";
       }
 
+      // ==========================================
+      // NOTES LOGIC
+      // ==========================================
+
       async function loadNotesForStudent(user) {
-        const container = document.getElementById("notesContainer");
-        if (!container) return;
-
-        container.innerHTML =
-          '<div class="loading">Loading notes for your class...</div>';
-
         try {
+          // 1. Fetch Official Subjects for this student's level/class
+          const subjectParams = new URLSearchParams();
+          if (user.level) subjectParams.append("level", user.level);
+          if (user.class) subjectParams.append("class", user.class);
+
+          let subjectsRes = await authFetch(
+            `${API_BASE}/subjects?${subjectParams.toString()}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+
+          let officialSubjects = [];
+          if (subjectsRes.ok) {
+            const subjectData = await subjectsRes.json();
+            officialSubjects = subjectData.data || [];
+          }
+
+          // 2. Fetch Notes
           const params = new URLSearchParams();
           if (user.level) params.append("level", user.level);
           if (user.class) params.append("class", user.class);
           if (user.combination) params.append("combination", user.combination);
+          params.append("limit", "100");
 
           let url = `${API_BASE}/notes`;
           const query = params.toString();
           if (query) url += "?" + query;
 
           const res = await authFetch(url, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
+            headers: { Authorization: `Bearer ${getToken()}` },
           });
 
           if (!res.ok) {
@@ -261,208 +360,390 @@
 
           const data = await res.json();
           allNotes = data.data || [];
-
           document.getElementById("notesCount").textContent = allNotes.length;
-          renderNotes(allNotes);
+
+          renderNoteSubjects(allNotes, officialSubjects);
         } catch (err) {
           console.error("Failed to load notes", err);
-          container.innerHTML =
-            '<div class="no-data">Could not load notes. Please try again later.</div>';
+          document.getElementById("notesSubjectContainer").innerHTML =
+            '<div class="no-data">Could not load notes.</div>';
         }
       }
 
-      async function loadResourcesForStudent(user) {
-        const container = document.getElementById("resourcesContainer");
+      function renderNoteSubjects(notes, officialSubjects) {
+        const container = document.getElementById("notesSubjectContainer");
         if (!container) return;
 
-        container.innerHTML = '<div class="loading">Loading resources...</div>';
+        // Create a map of normalized subject names to official display names
+        // e.g., "mathematics" -> "Mathematics"
+        const normalizedOfficial = {};
+        officialSubjects.forEach((s) => {
+          normalizedOfficial[s.name.trim().toLowerCase()] = s.name;
+        });
 
-        try {
-          const params = new URLSearchParams();
-          if (user.level) params.append("level", user.level);
-          if (user.class) params.append("class", user.class);
-          if (user.combination) params.append("combination", user.combination);
+        // Group notes by subject
+        const notesBySubject = {};
 
-          let url = `${API_BASE}/resources`;
-          const query = params.toString();
-          if (query) url += "?" + query;
+        notes.forEach((note) => {
+          const rawSubj = note.subject || "General";
+          const normSubj = rawSubj.trim().toLowerCase();
 
-          const res = await authFetch(url, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
-          });
+          // Use official name if exists, otherwise title case the raw one or keep as is
+          // We really want to group "Mathematics" and "mathematics" together under "Mathematics"
+          let displaySubj = normalizedOfficial[normSubj];
 
-          if (!res.ok) {
-            if (res.status === 401) {
-              removeToken();
-              window.location.href = "/pages/login.html";
-              return;
-            }
-            throw new Error("Failed to load resources");
+          if (!displaySubj) {
+            // If not found in official list, just use the raw subject but maybe capitalize it for display consistency?
+            // Or use the raw subject as the key.
+            // If we have "Biology" and "biology" in notes but NO official subject "Biology", they should still group.
+            // So we need a map of norm -> display for non-official too.
+            displaySubj = rawSubj; // fallback
           }
 
-          const data = await res.json();
-          const resources = data.data || [];
-          renderResources(resources);
-        } catch (err) {
-          container.innerHTML =
-            '<div class="no-data">Could not load resources.</div>';
-        }
-      }
+          // We use the NORMALIZED key for counting, but we need to store the display name
+          if (!notesBySubject[normSubj]) {
+            notesBySubject[normSubj] = { count: 0, displayName: displaySubj };
+          }
+          notesBySubject[normSubj].count++;
 
-      function renderResources(resources) {
-        const container = document.getElementById("resourcesContainer");
-        if (!container) return;
+          // Update display name if we found a "better" one (e.g. from official)
+          if (normalizedOfficial[normSubj]) {
+            notesBySubject[normSubj].displayName = normalizedOfficial[normSubj];
+          }
+        });
 
-        if (!resources.length) {
+        // Prepare list of subjects to display
+        // 1. All Official Subjects (even if 0 notes, if that's desired? User said "linked to subjects we fill in... containing ALL notes")
+        // Let's show official subjects.
+
+        const distinctSubjects = new Set();
+
+        // Add official subjects first
+        officialSubjects.forEach((s) => {
+          distinctSubjects.add(s.name.trim().toLowerCase());
+        });
+
+        // Add any other subjects found in notes
+        Object.keys(notesBySubject).forEach((norm) => {
+          distinctSubjects.add(norm);
+        });
+
+        const sortedKeys = [...distinctSubjects].sort();
+
+        if (sortedKeys.length === 0) {
           container.innerHTML =
-            '<div class="no-data">No resources for your class yet.</div>';
+            '<div class="no-data">No subjects available for your class.</div>';
           return;
         }
 
-        container.innerHTML = resources
-          .map(
-            (r) => `
-          <article class="note-card resource-card">
-            <div class="note-header">
-              <h3>${r.title}</h3>
-              ${r.subject ? `<span class="note-badge">${r.subject}</span>` : ""}
-            </div>
-            <p class="note-description">${r.description || "External link"}</p>
-            <div class="note-meta">
-              <span>Level: ${r.level}</span>
-              <span>Class: ${r.class.toUpperCase()}</span>
-            </div>
-            <div class="note-actions">
-              <a href="${r.url}" target="_blank" rel="noopener" class="btn-sm btn-primary">
-                Open Link →
-              </a>
-            </div>
-          </article>
-        `,
-          )
+        container.innerHTML = sortedKeys
+          .map((normKey) => {
+            // Get display name: either from official list, or from our notes grouping
+            let displayName = normalizedOfficial[normKey];
+            let count = 0;
+
+            if (notesBySubject[normKey]) {
+              count = notesBySubject[normKey].count;
+              if (!displayName)
+                displayName = notesBySubject[normKey].displayName;
+            }
+
+            if (!displayName) {
+              // Fallback if it was in official list but no notes, or some other edge case
+              // Try to find it in official list again
+              const official = officialSubjects.find(
+                (s) => s.name.trim().toLowerCase() === normKey,
+              );
+              displayName = official
+                ? official.name
+                : normKey.charAt(0).toUpperCase() + normKey.slice(1);
+            }
+
+            return `
+            <article class="note-card subject-card" data-subject="${displayName}" data-type="notes" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                <h3>${displayName}</h3>
+                <span class="note-badge" style="margin-top: 0.5rem;">${count} Notes</span>
+            </article>
+          `;
+          })
           .join("");
       }
 
-      function renderNotes(notes) {
+      function openNotesSubject(subjectDisplay) {
+        currentNotesSubject = subjectDisplay;
+        document.getElementById("notesSubjectView").style.display = "none";
+        document.getElementById("notesListView").style.display = "block";
+        document.getElementById("currentSubjectTitle").textContent =
+          subjectDisplay;
+
+        // Filter notes for this subject (case-insensitive)
+        // subjectDisplay is the "Nice Name" e.g. "Biology"
+        // We want to find notes where normalized(note.subject) == normalized(subjectDisplay)
+        const targetNorm = subjectDisplay.trim().toLowerCase();
+
+        const filtered = allNotes.filter((n) => {
+          const noteSubj = (n.subject || "General").trim().toLowerCase();
+          return noteSubj === targetNorm;
+        });
+
+        renderNotesList(filtered);
+      }
+
+      function showNotesSubjects() {
+        document.getElementById("notesListView").style.display = "none";
+        document.getElementById("notesSubjectView").style.display = "block";
+        currentNotesSubject = null;
+        // Clear search
+        const searchInput = document.getElementById("notesSearch");
+        if (searchInput) searchInput.value = "";
+      }
+
+      function renderNotesList(notes) {
         const container = document.getElementById("notesContainer");
         if (!container) return;
 
         if (!notes.length) {
-          container.innerHTML =
-            '<div class="no-data">No notes found for your class yet.</div>';
+          container.innerHTML = '<div class="no-data">No notes found.</div>';
           return;
         }
 
         container.innerHTML = notes
           .map(
             (note) => `
-          <article class="note-card">
-            <div class="note-header">
-              <h3>${note.title}</h3>
-              <span class="note-badge">${note.subject}</span>
-            </div>
-            <p class="note-description">
-              ${note.description || "No description provided."}
-            </p>
-            <div class="note-meta">
-              <span>Level: ${note.level}</span>
-              <span>Class: ${note.class.toUpperCase()}</span>
-              ${
-                note.combination
-                  ? `<span>Combination: ${note.combination}</span>`
-                  : ""
-              }
-              <span>Uploaded: ${formatDate(note.createdAt)}</span>
-            </div>
-            <div class="note-actions">
-              <button
-                class="btn-sm btn-primary view-note-btn"
-                data-note-id="${note.id}"
-              >
-                View
-              </button>
-              <button
-                class="btn-sm btn-primary download-note-btn"
-                data-note-id="${note.id}"
-                data-note-title="${note.title.replace(/"/g, "&quot;")}"
-              >
-                Download
-              </button>
-            </div>
-          </article>
-        `,
+            <article class="note-card">
+              <div class="note-header">
+                <h3>${note.title}</h3>
+                <!-- Subject is already known in this view, so maybe show type/date -->
+                <span class="note-badge">${formatDate(note.createdAt)}</span>
+              </div>
+              <p class="note-description">
+                ${note.description || "No description provided."}
+              </p>
+              <div class="note-meta">
+                 <span>${note.getReadableFileSize ? note.getReadableFileSize() : ""}</span>
+              </div>
+              <div class="note-actions">
+                <button
+                  class="btn-sm btn-primary view-note-btn"
+                  data-note-id="${note.id}"
+                  style="width: 100%;"
+                >
+                  View Note
+                </button>
+              </div>
+            </article>
+          `,
           )
           .join("");
       }
 
       function filterNotes(term) {
+        if (!currentNotesSubject) return; // Only filter when inside a subject
+
         const q = term.trim().toLowerCase();
+        // pre-filter by current subject
+        const targetNorm = currentNotesSubject.trim().toLowerCase();
+        const subjectNotes = allNotes.filter(
+          (n) => (n.subject || "General").trim().toLowerCase() === targetNorm,
+        );
+
         if (!q) {
-          renderNotes(allNotes);
+          renderNotesList(subjectNotes);
           return;
         }
 
-        const filtered = allNotes.filter((note) => {
+        const filtered = subjectNotes.filter((note) => {
           return (
             (note.title && note.title.toLowerCase().includes(q)) ||
-            (note.subject && note.subject.toLowerCase().includes(q)) ||
-            (note.description &&
-              note.description.toLowerCase().includes(q))
+            (note.description && note.description.toLowerCase().includes(q))
           );
         });
 
-        renderNotes(filtered);
+        renderNotesList(filtered);
       }
 
-      async function viewNote(id) {
+      // ==========================================
+      // RESOURCES LOGIC
+      // ==========================================
+
+      async function loadResourcesForStudent(user) {
         try {
-          const res = await authFetch(`${API_BASE}/notes/${id}/view`, {
+          // 1. Fetch Official Subjects
+          const subjectParams = new URLSearchParams();
+          if (user.level) subjectParams.append("level", user.level);
+          if (user.class) subjectParams.append("class", user.class);
+
+          let subjectsRes = await authFetch(
+            `${API_BASE}/subjects?${subjectParams.toString()}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+
+          let officialSubjects = [];
+          if (subjectsRes.ok) {
+            const subjectData = await subjectsRes.json();
+            officialSubjects = subjectData.data || [];
+          }
+
+          // 2. Fetch Resources
+          const params = new URLSearchParams();
+          if (user.level) params.append("level", user.level);
+          if (user.class) params.append("class", user.class);
+          if (user.combination) params.append("combination", user.combination);
+          params.append("limit", "100");
+
+          let url = `${API_BASE}/resources`;
+          const query = params.toString();
+          if (query) url += "?" + query;
+
+          const res = await authFetch(url, {
             headers: { Authorization: `Bearer ${getToken()}` },
           });
-          if (!res.ok) {
-            if (res.status === 401) {
-              removeToken();
-              window.location.href = "/pages/login.html";
-              return;
-            }
-            throw new Error("Failed to load note");
-          }
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          window.open(url, "_blank", "noopener,noreferrer");
+
+          if (!res.ok) throw new Error("Failed");
+
+          const data = await res.json();
+          allResources = data.data || [];
+          document.getElementById("resourcesCount").textContent =
+            allResources.length;
+
+          renderResourceSubjects(allResources, officialSubjects);
         } catch (err) {
-          alert(err.message || "Could not view note");
+          console.error("Failed to load resources", err);
+          document.getElementById("resourcesSubjectContainer").innerHTML =
+            '<div class="no-data">Could not load resources.</div>';
         }
       }
 
-      async function downloadNote(id, title) {
-        try {
-          const res = await authFetch(`${API_BASE}/notes/${id}/download`, {
-            headers: {
-              Authorization: `Bearer ${getToken()}`,
-            },
-          });
+      function renderResourceSubjects(resources, officialSubjects) {
+        const container = document.getElementById("resourcesSubjectContainer");
+        if (!container) return;
 
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.message || "Failed to download note");
+        const normalizedOfficial = {};
+        officialSubjects.forEach((s) => {
+          normalizedOfficial[s.name.trim().toLowerCase()] = s.name;
+        });
+
+        const resourcesBySubject = {};
+        resources.forEach((r) => {
+          const rawSubj = r.subject || "General";
+          const normSubj = rawSubj.trim().toLowerCase();
+
+          let displaySubj = normalizedOfficial[normSubj];
+          if (!displaySubj) displaySubj = rawSubj;
+
+          if (!resourcesBySubject[normSubj]) {
+            resourcesBySubject[normSubj] = {
+              count: 0,
+              displayName: displaySubj,
+            };
           }
+          resourcesBySubject[normSubj].count++;
 
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = (title || "note").replace(/[^\w\-.]+/g, "_");
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-        } catch (err) {
-          console.error("Download failed", err);
-          alert(err.message || "Failed to download note");
+          if (normalizedOfficial[normSubj]) {
+            resourcesBySubject[normSubj].displayName =
+              normalizedOfficial[normSubj];
+          }
+        });
+
+        const distinctSubjects = new Set();
+        officialSubjects.forEach((s) => {
+          distinctSubjects.add(s.name.trim().toLowerCase());
+        });
+        Object.keys(resourcesBySubject).forEach((norm) => {
+          distinctSubjects.add(norm);
+        });
+
+        const sortedKeys = [...distinctSubjects].sort();
+
+        if (sortedKeys.length === 0) {
+          container.innerHTML =
+            '<div class="no-data">No resources available.</div>';
+          return;
         }
+
+        container.innerHTML = sortedKeys
+          .map((normKey) => {
+            let displayName = normalizedOfficial[normKey];
+            let count = 0;
+
+            if (resourcesBySubject[normKey]) {
+              count = resourcesBySubject[normKey].count;
+              if (!displayName)
+                displayName = resourcesBySubject[normKey].displayName;
+            }
+
+            if (!displayName) {
+              const official = officialSubjects.find(
+                (s) => s.name.trim().toLowerCase() === normKey,
+              );
+              displayName = official
+                ? official.name
+                : normKey.charAt(0).toUpperCase() + normKey.slice(1);
+            }
+
+            return `
+            <article class="note-card subject-card" data-subject="${displayName}" data-type="resources" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔗</div>
+                <h3>${displayName}</h3>
+                <span class="note-badge" style="margin-top: 0.5rem;">${count} Resources</span>
+            </article>
+          `;
+          })
+          .join("");
+      }
+
+      function openResourcesSubject(subjectDisplay) {
+        document.getElementById("resourcesSubjectView").style.display = "none";
+        document.getElementById("resourcesListView").style.display = "block";
+        document.getElementById("currentResourceSubjectTitle").textContent =
+          subjectDisplay;
+
+        const targetNorm = subjectDisplay.trim().toLowerCase();
+        const filtered = allResources.filter(
+          (r) => (r.subject || "General").trim().toLowerCase() === targetNorm,
+        );
+
+        const container = document.getElementById("resourcesContainer");
+        container.innerHTML = filtered
+          .map(
+            (r) => `
+             <article class="note-card resource-card">
+              <div class="note-header">
+                <h3>${r.title}</h3>
+              </div>
+              <p class="note-description">${r.description || "External link"}</p>
+              <div class="note-actions">
+                <a href="${r.url}" target="_blank" rel="noopener" class="btn-sm btn-primary" style="width: 100%; text-align: center;">
+                  Open Link →
+                </a>
+              </div>
+            </article>
+          `,
+          )
+          .join("");
+      }
+
+      function showResourcesSubjects() {
+        document.getElementById("resourcesListView").style.display = "none";
+        document.getElementById("resourcesSubjectView").style.display = "block";
+      }
+
+      // ==========================================
+      // VIEW NOTE LOGIC
+      // ==========================================
+
+      function viewNote(id) {
+        const token = getToken();
+        if (!token) {
+          window.location.href = "/pages/login.html";
+          return;
+        }
+        // Direct open with token param
+        const url = `${API_BASE}/notes/${id}/view?token=${token}`;
+        window.open(url, "_blank", "noopener,noreferrer");
       }
     </script>
   </body>

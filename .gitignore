@@ -8,7 +8,16 @@ node_modules/
 dist/
 build/
 
+# User uploads (don't commit user files)
+uploads/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+
+# PM2
+.pm2/
+pids/
+*.pid

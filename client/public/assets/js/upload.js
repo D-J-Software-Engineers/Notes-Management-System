@@ -4,23 +4,24 @@
 // ============================================
 
 const UPLOAD_API_BASE = "/api";
+let currentSubjects = [];
 
 const combinationsByStream = {
   sciences: {
-    'PCM': 'Physics, Chemistry, Math',
-    'PCB': 'Physics, Chemistry, Biology',
-    'BCG': 'Biology, Chemistry, Geography',
-    'MPG': 'Math, Physics, Geography',
-    'BCM': 'Biology, Chemistry, Math'
+    PCM: "Physics, Chemistry, Math",
+    PCB: "Physics, Chemistry, Biology",
+    BCG: "Biology, Chemistry, Geography",
+    MPG: "Math, Physics, Geography",
+    BCM: "Biology, Chemistry, Math",
   },
   arts: {
-    'HEG': 'History, Economics, Geography',
-    'HEL': 'History, Economics, Literature',
-    'MEG': 'Math, Economics, Geography',
-    'DEG': 'Divinity, Economics, Geography',
-    'HGL': 'History, Geography, Literature',
-    'AKR': 'Art, Kiswahili, RE'
-  }
+    HEG: "History, Economics, Geography",
+    HEL: "History, Economics, Literature",
+    MEG: "Math, Economics, Geography",
+    DEG: "Divinity, Economics, Geography",
+    HGL: "History, Geography, Literature",
+    AKR: "Art, Kiswahili, RE",
+  },
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -62,10 +63,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       classSelect.innerHTML = '<option value="">Select class</option>';
 
       // Reset Stream/Combination on level change
-      if (streamDiv) streamDiv.style.display = 'none';
-      if (combinationDiv) combinationDiv.style.display = 'none';
-      if (streamSelect) streamSelect.value = '';
-      if (combinationSelect) combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+      if (streamDiv) streamDiv.style.display = "none";
+      if (combinationDiv) combinationDiv.style.display = "none";
+      if (streamSelect) streamSelect.value = "";
+      if (combinationSelect)
+        combinationSelect.innerHTML =
+          '<option value="">Select Stream First</option>';
 
       if (level === "o-level") {
         classSelect.innerHTML += `
@@ -79,7 +82,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="s5">S5</option>
           <option value="s6">S6</option>
         `;
-        if (streamDiv) streamDiv.style.display = 'block';
+        if (streamDiv) streamDiv.style.display = "block";
+      }
+    });
+  }
+
+  // Effect: When Class changes, fetch subjects
+  if (classSelect) {
+    classSelect.addEventListener("change", () => {
+      const level = levelSelect.value;
+      const classVal = classSelect.value;
+      if (level && classVal) {
+        loadSubjects(level, classVal);
+      } else {
+        document.getElementById("subject").innerHTML =
+          '<option value="">Select Class First</option>';
       }
     });
   }
@@ -89,15 +106,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       const stream = streamSelect.value;
       if (combinationDiv) {
         if (stream && combinationsByStream[stream]) {
-          combinationDiv.style.display = 'block';
+          combinationDiv.style.display = "block";
           const combos = combinationsByStream[stream];
-          combinationSelect.innerHTML = '<option value="">Select Combination</option>' +
-            Object.entries(combos).map(([code, name]) =>
-              `<option value="${code}">${code} (${name})</option>`
-            ).join('');
+          combinationSelect.innerHTML =
+            '<option value="">Select Combination</option>' +
+            Object.entries(combos)
+              .map(
+                ([code, name]) =>
+                  `<option value="${code}">${code} (${name})</option>`,
+              )
+              .join("");
         } else {
-          combinationDiv.style.display = 'none';
-          combinationSelect.innerHTML = '<option value="">Select Stream First</option>';
+          combinationDiv.style.display = "none";
+          combinationSelect.innerHTML =
+            '<option value="">Select Stream First</option>';
         }
       }
     });
@@ -148,10 +170,54 @@ async function handleUploadSubmit(e) {
   } catch (err) {
     console.error("Upload failed", err);
     if (messageEl) {
-      messageEl.innerHTML = `<div class="error-message">${err.message || "Failed to upload note"
-        }</div>`;
+      messageEl.innerHTML = `<div class="error-message">${
+        err.message || "Failed to upload note"
+      }</div>`;
     }
   }
 }
 
+async function loadSubjects(level, classVal) {
+  const subjectSelect = document.getElementById("subject");
+  if (!subjectSelect) return;
 
+  subjectSelect.innerHTML = '<option value="">Loading...</option>';
+
+  try {
+    // Construct query parameters
+    const params = new URLSearchParams({
+      level,
+      class: classVal,
+    });
+
+    const res = await fetch(
+      `${UPLOAD_API_BASE}/subjects?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      },
+    );
+
+    if (!res.ok) throw new Error("Failed to load subjects");
+
+    const data = await res.json();
+    currentSubjects = data.data || [];
+
+    if (currentSubjects.length === 0) {
+      subjectSelect.innerHTML =
+        '<option value="">No subjects found for this class</option>';
+      return;
+    }
+
+    subjectSelect.innerHTML =
+      '<option value="">Select Subject</option>' +
+      currentSubjects
+        .map((s) => `<option value="${s.name}">${s.name}</option>`)
+        .join("");
+  } catch (err) {
+    console.error("Error loading subjects:", err);
+    subjectSelect.innerHTML =
+      '<option value="">Error loading subjects</option>';
+  }
+}

@@ -96,7 +96,8 @@ function isStrongPassword(password) {
 function getLoginRedirectUrl() {
   const path = window.location.pathname || "";
   if (path.includes("admin-dashboard")) return "/pages/login.html?role=admin";
-  if (path.includes("student-dashboard")) return "/pages/login.html?role=student";
+  if (path.includes("student-dashboard"))
+    return "/pages/login.html?role=student";
   return "/pages/login.html";
 }
 

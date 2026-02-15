@@ -19,7 +19,11 @@ exports.getAllSubjects = async (req, res, next) => {
 
     const subjects = await Subject.findAll({
       where,
-      order: [["level", "ASC"], ["class", "ASC"], ["name", "ASC"]],
+      order: [
+        ["level", "ASC"],
+        ["class", "ASC"],
+        ["name", "ASC"],
+      ],
     });
 
     res.status(200).json({
@@ -41,7 +45,10 @@ exports.getSubjectsByLevel = async (req, res, next) => {
 
     const subjects = await Subject.findAll({
       where: { level },
-      order: [["class", "ASC"], ["name", "ASC"]],
+      order: [
+        ["class", "ASC"],
+        ["name", "ASC"],
+      ],
     });
 
     res.status(200).json({
@@ -59,8 +66,14 @@ exports.getSubjectsByLevel = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.createSubject = async (req, res, next) => {
   try {
-    const { name, code, level, class: classLevel, isCompulsory, stream } =
-      req.body;
+    const {
+      name,
+      code,
+      level,
+      class: classLevel,
+      isCompulsory,
+      stream,
+    } = req.body;
 
     const subject = await Subject.create({
       name,
@@ -92,8 +105,14 @@ exports.updateSubject = async (req, res, next) => {
       return next(new ErrorResponse("Subject not found", 404));
     }
 
-    const { name, code, level, class: classLevel, isCompulsory, stream } =
-      req.body;
+    const {
+      name,
+      code,
+      level,
+      class: classLevel,
+      isCompulsory,
+      stream,
+    } = req.body;
 
     if (name) subject.name = name;
     if (typeof code !== "undefined") subject.code = code;

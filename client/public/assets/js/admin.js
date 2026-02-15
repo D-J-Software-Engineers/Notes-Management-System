@@ -157,15 +157,13 @@ function setupEventListeners() {
     // Note actions
     else if (e.target.classList.contains("edit-note-btn")) {
       editNote(e.target.getAttribute("data-note-id"));
-    } else if (e.target.classList.contains("delete-note-btn")) {
-      deleteNote(e.target.getAttribute("data-note-id"));
     }
+    // Delete note functionality removed - admins cannot delete notes
     // Resource actions
     else if (e.target.classList.contains("edit-resource-btn")) {
       editResource(e.target.getAttribute("data-resource-id"));
-    } else if (e.target.classList.contains("delete-resource-btn")) {
-      deleteResource(e.target.getAttribute("data-resource-id"));
     }
+    // Delete resource functionality removed - admins cannot delete resources
   });
 }
 
@@ -973,7 +971,6 @@ function displayNotes(notes) {
             <td>${new Date(note.createdAt).toLocaleDateString()}</td>
             <td>
                 <button class="btn-sm btn-primary edit-note-btn" data-note-id="${note.id}">Edit</button>
-                <button class="btn-sm btn-danger delete-note-btn" data-note-id="${note.id}">Delete</button>
             </td>
         </tr>
     `,
@@ -1250,7 +1247,6 @@ function displayResources(resources) {
         <td>${r.class.toUpperCase()}</td>
         <td>
             <button class="btn-sm btn-primary edit-resource-btn" data-resource-id="${r.id}">Edit</button>
-            <button class="btn-sm btn-danger delete-resource-btn" data-resource-id="${r.id}">Delete</button>
         </td>
     </tr>
   `,

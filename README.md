@@ -24,6 +24,7 @@ Optimized for **ICT Lab Deployment** and **Offline Access (PWA)**.
 ## 🚀 How to Run in the ICT Lab
 
 ### 1. Prerequisites
+
 - **Server PC**: The teacher's computer or a dedicated server.
 - **Node.js**: Installed on the Server PC.
 - **PostgreSQL**: Installed and running on the Server PC.
@@ -52,7 +53,7 @@ Optimized for **ICT Lab Deployment** and **Offline Access (PWA)**.
     ```bash
     npm run seed
     ```
-    *This creates the initial Admin account.*
+    _This creates the initial Admin account._
 
 ### 3. Starting the System
 
@@ -91,5 +92,6 @@ npm start
 - `ecosystem.config.js`: Configuration for keeping the server alive.
 
 ## ⚠️ Security Notes
+
 - Admin registration is **disabled** for public users. Create admins via database or seed script.
 - File uploads are validated to prevent viruses/scripts.

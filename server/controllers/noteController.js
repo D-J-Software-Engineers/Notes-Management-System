@@ -35,10 +35,7 @@ exports.getAllNotes = async (req, res, next) => {
     const andConditions = [];
     if (combination) {
       andConditions.push({
-        [Op.or]: [
-          { combination: null },
-          { combination },
-        ],
+        [Op.or]: [{ combination: null }, { combination }],
       });
     }
     // Text search (basic title/description search)
@@ -274,7 +271,10 @@ exports.viewNote = async (req, res, next) => {
 
     await note.incrementViews();
 
-    res.setHeader("Content-Disposition", `inline; filename="${note.originalFileName}"`);
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${note.originalFileName}"`,
+    );
     res.sendFile(path.resolve(process.cwd(), note.filePath));
   } catch (error) {
     next(error);

@@ -5,7 +5,6 @@
 
 const API_BASE = "/api";
 
-
 // Token management functions
 function setToken(token) {
   localStorage.setItem("token", token);
@@ -201,8 +200,14 @@ function checkAuthAndRedirect() {
   })
     .then((response) => {
       if (!response.ok) {
-        removeToken();
-        return false;
+        // Only logout if explicitly unauthorized
+        if (response.status === 401 || response.status === 403) {
+          removeToken();
+          return false;
+        }
+        // For other errors (500, etc), keep token but maybe warn?
+        // For now, treat as valid to prevent logout loop on server blip
+        return null;
       }
       return response.json();
     })
@@ -223,8 +228,8 @@ function checkAuthAndRedirect() {
       }
     })
     .catch((error) => {
-      console.error("Auth check failed:", error);
-      removeToken();
+      // Do not logout on network error
+      console.warn("Auth check failed:", error);
     });
 
   return true;

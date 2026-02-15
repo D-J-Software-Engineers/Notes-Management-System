@@ -281,12 +281,13 @@ function renderDashboard() {
 
 async function loadDashboard() {
   try {
-    const [studentsRes, subjectsRes, notesRes, resourcesRes] = await Promise.all([
-      authFetch(`${API_BASE}/users`, { headers: getAuthHeaders() }),
-      authFetch(`${API_BASE}/subjects`, { headers: getAuthHeaders() }),
-      authFetch(`${API_BASE}/notes`, { headers: getAuthHeaders() }),
-      authFetch(`${API_BASE}/resources`, { headers: getAuthHeaders() }),
-    ]);
+    const [studentsRes, subjectsRes, notesRes, resourcesRes] =
+      await Promise.all([
+        authFetch(`${API_BASE}/users`, { headers: getAuthHeaders() }),
+        authFetch(`${API_BASE}/subjects`, { headers: getAuthHeaders() }),
+        authFetch(`${API_BASE}/notes`, { headers: getAuthHeaders() }),
+        authFetch(`${API_BASE}/resources`, { headers: getAuthHeaders() }),
+      ]);
 
     const studentsData = await studentsRes.json();
     const subjectsData = await subjectsRes.json();
@@ -1201,15 +1202,19 @@ function setupResourcesListeners() {
   const addResourceBtn = document.getElementById("addResourceBtn");
   const resourceLevelFilter = document.getElementById("resourceLevelFilter");
   const resourceClassFilter = document.getElementById("resourceClassFilter");
-  if (addResourceBtn) addResourceBtn.addEventListener("click", showAddResourceModal);
-  if (resourceLevelFilter) resourceLevelFilter.addEventListener("change", loadResources);
-  if (resourceClassFilter) resourceClassFilter.addEventListener("change", loadResources);
+  if (addResourceBtn)
+    addResourceBtn.addEventListener("click", showAddResourceModal);
+  if (resourceLevelFilter)
+    resourceLevelFilter.addEventListener("change", loadResources);
+  if (resourceClassFilter)
+    resourceClassFilter.addEventListener("change", loadResources);
 }
 
 async function loadResources() {
   try {
     const level = document.getElementById("resourceLevelFilter")?.value || "";
-    const classLevel = document.getElementById("resourceClassFilter")?.value || "";
+    const classLevel =
+      document.getElementById("resourceClassFilter")?.value || "";
     let url = `${API_BASE}/resources`;
     const params = new URLSearchParams();
     if (level) params.append("level", level);
@@ -1230,10 +1235,13 @@ function displayResources(resources) {
   const tbody = document.getElementById("resourcesTableBody");
   if (!tbody) return;
   if (resources.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="no-data">No resources found</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="no-data">No resources found</td></tr>';
     return;
   }
-  tbody.innerHTML = resources.map((r) => `
+  tbody.innerHTML = resources
+    .map(
+      (r) => `
     <tr>
         <td>${r.title}</td>
         <td><a href="${r.url}" target="_blank" rel="noopener">${r.url.substring(0, 40)}${r.url.length > 40 ? "..." : ""}</a></td>
@@ -1245,7 +1253,9 @@ function displayResources(resources) {
             <button class="btn-sm btn-danger delete-resource-btn" data-resource-id="${r.id}">Delete</button>
         </td>
     </tr>
-  `).join("");
+  `,
+    )
+    .join("");
 }
 
 function showAddResourceModal() {
@@ -1259,8 +1269,25 @@ function editResource(id) {
 }
 
 function showResourceModal(title, resource) {
-  const combos = ["PCM","PCB","BCG","HEG","HEL","MEG","DEG","MPG","BCM","HGL","AKR"];
-  const comboOpts = combos.map((c) => `<option value="${c}" ${resource && resource.combination === c ? "selected" : ""}>${c}</option>`).join("");
+  const combos = [
+    "PCM",
+    "PCB",
+    "BCG",
+    "HEG",
+    "HEL",
+    "MEG",
+    "DEG",
+    "MPG",
+    "BCM",
+    "HGL",
+    "AKR",
+  ];
+  const comboOpts = combos
+    .map(
+      (c) =>
+        `<option value="${c}" ${resource && resource.combination === c ? "selected" : ""}>${c}</option>`,
+    )
+    .join("");
   const modalContent = `
         <form id="resourceForm">
             <input type="hidden" id="resourceId" value="${resource ? resource.id : ""}">
@@ -1314,8 +1341,12 @@ function showResourceModal(title, resource) {
         </form>
     `;
   showModal(title, modalContent, () => {
-    document.getElementById("resourceForm").addEventListener("submit", saveResource);
-    document.getElementById("cancelResourceBtn").addEventListener("click", closeModal);
+    document
+      .getElementById("resourceForm")
+      .addEventListener("submit", saveResource);
+    document
+      .getElementById("cancelResourceBtn")
+      .addEventListener("click", closeModal);
   });
 }
 

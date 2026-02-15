@@ -31,23 +31,33 @@ const fileFilter = (req, file, cb) => {
     "application/msword",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   ];
 
   // Allowed extensions (Double check)
   const allowedExtensions = [
-    ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx", ".ppt", ".pptx"
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".ppt",
+    ".pptx",
   ];
 
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(ext)) {
+  if (
+    allowedMimeTypes.includes(file.mimetype) &&
+    allowedExtensions.includes(ext)
+  ) {
     cb(null, true);
   } else {
     cb(
       new Error(
-        "Invalid file type. Only Images, PDF, Word, and PowerPoint files are allowed."
-      )
+        "Invalid file type. Only Images, PDF, Word, and PowerPoint files are allowed.",
+      ),
     );
   }
 };

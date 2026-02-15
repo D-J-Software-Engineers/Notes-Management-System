@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#4a90e2" />
     <title>Notes Management System - Home</title>
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/png" href="/assets/images/logo.png">
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/assets/images/logo.png" />
     <style>
       * {
         margin: 0;
@@ -148,30 +148,24 @@
       }
     </style>
   </head>
+
   <body>
     <div class="container">
-      <h1>📚 Notes Management System</h1>
+      <img
+        src="/assets/images/nsoma.png"
+        alt="Nsoma Digilib Logo"
+        style="max-width: 150px; margin-bottom: 20px"
+      />
+      <h1>📚 Nsoma Digilib</h1>
       <p class="subtitle">Access your study materials anytime, anywhere</p>
 
-      <div class="status">
-        <h3 style="margin-bottom: 15px; color: #333">System Status</h3>
-        <div class="status-item">
-          <span class="status-label">Server:</span>
-          <span class="status-value" id="serverStatus">Checking...</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label">Database:</span>
-          <span class="status-value" id="dbStatus">Checking...</span>
-        </div>
-        <div class="status-item">
-          <span class="status-label">API:</span>
-          <span class="status-value" id="apiStatus">Checking...</span>
-        </div>
-      </div>
+      <!-- System status removed as requested -->
 
       <div class="btn-group">
         <a href="/pages/login.html?role=student" class="btn">Student Login</a>
-        <a href="/pages/login.html?role=admin" class="btn btn-secondary">Admin Login</a>
+        <a href="/pages/login.html?role=admin" class="btn btn-secondary"
+          >Admin Login</a
+        >
       </div>
 
       <div class="info">
@@ -183,19 +177,20 @@
       </div>
     </div>
 
-    <!-- External script to avoid inline CSP issues -->
-    <script src="/assets/js/status.js"></script>
-
     <!-- PWA Service Worker Registration -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .then((registration) => {
+              console.log(
+                "ServiceWorker registration successful with scope: ",
+                registration.scope,
+              );
             })
-            .catch(err => {
-              console.log('ServiceWorker registration failed: ', err);
+            .catch((err) => {
+              console.log("ServiceWorker registration failed: ", err);
             });
         });
       }

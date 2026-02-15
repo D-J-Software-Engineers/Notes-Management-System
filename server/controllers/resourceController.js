@@ -3,10 +3,10 @@
 // Admin adds links (YouTube, etc); students view and click
 // ============================================
 
-const Resource = require('../models/Resource');
-const User = require('../models/User');
-const { ErrorResponse } = require('../middleware/errorHandler');
-const { Op } = require('sequelize');
+const Resource = require("../models/Resource");
+const User = require("../models/User");
+const { ErrorResponse } = require("../middleware/errorHandler");
+const { Op } = require("sequelize");
 
 // @desc    Get all resources with filters
 // @route   GET /api/resources
@@ -30,10 +30,7 @@ exports.getAllResources = async (req, res, next) => {
     const andConditions = [];
     if (combination) {
       andConditions.push({
-        [Op.or]: [
-          { combination: null },
-          { combination },
-        ],
+        [Op.or]: [{ combination: null }, { combination }],
       });
     }
     if (search) {
@@ -52,8 +49,10 @@ exports.getAllResources = async (req, res, next) => {
 
     const { rows: resources, count: total } = await Resource.findAndCountAll({
       where,
-      include: [{ model: User, as: 'addedBy', attributes: ['id', 'name', 'email'] }],
-      order: [['createdAt', 'DESC']],
+      include: [
+        { model: User, as: "addedBy", attributes: ["id", "name", "email"] },
+      ],
+      order: [["createdAt", "DESC"]],
       limit: limitNum,
       offset,
     });
@@ -77,10 +76,12 @@ exports.getAllResources = async (req, res, next) => {
 exports.getResource = async (req, res, next) => {
   try {
     const resource = await Resource.findByPk(req.params.id, {
-      include: [{ model: User, as: 'addedBy', attributes: ['id', 'name', 'email'] }],
+      include: [
+        { model: User, as: "addedBy", attributes: ["id", "name", "email"] },
+      ],
     });
     if (!resource) {
-      return next(new ErrorResponse('Resource not found', 404));
+      return next(new ErrorResponse("Resource not found", 404));
     }
     res.status(200).json({ success: true, data: resource });
   } catch (error) {
@@ -93,9 +94,19 @@ exports.getResource = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.createResource = async (req, res, next) => {
   try {
-    const { title, description, url, subject, class: classLevel, level, combination } = req.body;
+    const {
+      title,
+      description,
+      url,
+      subject,
+      class: classLevel,
+      level,
+      combination,
+    } = req.body;
     if (!title || !url || !classLevel || !level) {
-      return next(new ErrorResponse('Title, URL, class, and level are required', 400));
+      return next(
+        new ErrorResponse("Title, URL, class, and level are required", 400),
+      );
     }
     const resource = await Resource.create({
       title,
@@ -109,7 +120,7 @@ exports.createResource = async (req, res, next) => {
     });
     res.status(201).json({
       success: true,
-      message: 'Resource added successfully',
+      message: "Resource added successfully",
       data: resource,
     });
   } catch (error) {
@@ -123,8 +134,16 @@ exports.createResource = async (req, res, next) => {
 exports.updateResource = async (req, res, next) => {
   try {
     const resource = await Resource.findByPk(req.params.id);
-    if (!resource) return next(new ErrorResponse('Resource not found', 404));
-    const { title, description, url, subject, class: classLevel, level, combination } = req.body;
+    if (!resource) return next(new ErrorResponse("Resource not found", 404));
+    const {
+      title,
+      description,
+      url,
+      subject,
+      class: classLevel,
+      level,
+      combination,
+    } = req.body;
     if (title) resource.title = title;
     if (description !== undefined) resource.description = description;
     if (url) resource.url = url;
@@ -133,7 +152,9 @@ exports.updateResource = async (req, res, next) => {
     if (level) resource.level = level;
     if (combination !== undefined) resource.combination = combination;
     await resource.save();
-    res.status(200).json({ success: true, message: 'Resource updated', data: resource });
+    res
+      .status(200)
+      .json({ success: true, message: "Resource updated", data: resource });
   } catch (error) {
     next(error);
   }
@@ -145,9 +166,9 @@ exports.updateResource = async (req, res, next) => {
 exports.deleteResource = async (req, res, next) => {
   try {
     const resource = await Resource.findByPk(req.params.id);
-    if (!resource) return next(new ErrorResponse('Resource not found', 404));
+    if (!resource) return next(new ErrorResponse("Resource not found", 404));
     await resource.destroy();
-    res.status(200).json({ success: true, message: 'Resource deleted' });
+    res.status(200).json({ success: true, message: "Resource deleted" });
   } catch (error) {
     next(error);
   }

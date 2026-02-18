@@ -1,0 +1,4 @@
+{
+  "ignore": ["uploads/*", "client/*", "node_modules/*"],
+  "delay": "1000"
+}

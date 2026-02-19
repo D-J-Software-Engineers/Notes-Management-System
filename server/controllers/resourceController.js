@@ -18,6 +18,8 @@ exports.getAllResources = async (req, res, next) => {
       class: classLevel,
       subject,
       combination,
+      classStream,
+      stream,
       search,
       limit = 50,
       page = 1,
@@ -27,7 +29,13 @@ exports.getAllResources = async (req, res, next) => {
     if (level) where.level = level;
     if (classLevel) where.class = classLevel;
     if (subject) where.subject = subject;
+    if (stream) where.stream = stream;
     const andConditions = [];
+    if (classStream) {
+      andConditions.push({
+        [Op.or]: [{ classStream: null }, { classStream }],
+      });
+    }
     if (combination) {
       andConditions.push({
         [Op.or]: [{ combination: null }, { combination }],
@@ -101,6 +109,8 @@ exports.createResource = async (req, res, next) => {
       subject,
       class: classLevel,
       level,
+      classStream,
+      stream,
       combination,
     } = req.body;
     if (!title || !url || !classLevel || !level) {
@@ -116,6 +126,8 @@ exports.createResource = async (req, res, next) => {
       class: classLevel,
       level,
       combination: combination || null,
+      classStream: classStream || null,
+      stream: stream || null,
       addedById: req.user.id,
     });
     res.status(201).json({
@@ -143,6 +155,8 @@ exports.updateResource = async (req, res, next) => {
       class: classLevel,
       level,
       combination,
+      classStream,
+      stream,
     } = req.body;
     if (title) resource.title = title;
     if (description !== undefined) resource.description = description;
@@ -151,6 +165,8 @@ exports.updateResource = async (req, res, next) => {
     if (classLevel) resource.class = classLevel;
     if (level) resource.level = level;
     if (combination !== undefined) resource.combination = combination;
+    if (classStream !== undefined) resource.classStream = classStream;
+    if (stream !== undefined) resource.stream = stream;
     await resource.save();
     res
       .status(200)

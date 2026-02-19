@@ -1,0 +1,69 @@
+/* ============================================
+   NSOMA DIGLIBS - RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 992px) {
+  .nav-container {
+    padding: 0 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    width: 95%;
+    padding: 2rem 1rem;
+  }
+
+  .admin-container,
+  .student-container {
+    flex-direction: column;
+  }
+
+  .admin-sidebar,
+  .student-sidebar {
+    width: 100%;
+    padding: 0.5rem 0;
+  }
+
+  .sidebar-menu {
+    display: flex;
+    overflow-x: auto;
+    background: #2c3e50;
+  }
+
+  .sidebar-link {
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stats-grid,
+  .notes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    margin: 10% auto;
+    width: 95%;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-group {
+    flex-direction: column;
+  }
+}

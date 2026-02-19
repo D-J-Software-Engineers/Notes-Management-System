@@ -85,7 +85,7 @@ function renderApp() {
         <!-- Navigation -->
         <nav class="admin-nav">
             <div class="nav-container">
-                <h1 class="nav-logo">📚 Admin Dashboard</h1>
+                <h1 class="nav-logo">📚 Nsoma DigLibs</h1>
                 <div class="nav-user">
                     <span id="adminName">${currentAdmin.name}</span>
                     <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -102,6 +102,7 @@ function renderApp() {
                     <li><a href="#" class="sidebar-link" data-tab="students">👥 Students</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="subjects">📖 Subjects</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="streams">🏘️ Streams</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
                 </ul>
             </aside>
@@ -219,6 +220,13 @@ function switchTab(tabName) {
       setTimeout(() => {
         setupNotesListeners();
         loadNotes();
+      }, 10);
+    } else if (tabName === "streams") {
+      content = renderStreamsTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        setupStreamsListeners();
+        loadStreams();
       }, 10);
     } else if (tabName === "resources") {
       content = renderResourcesTab();
@@ -685,8 +693,8 @@ function displaySubjects(subjects) {
                   ? subject.classes.join(", ").toUpperCase()
                   : "-"
             }</td>
-            <td>${subject.isCompulsory ? "Yes" : "No"}</td>
-            <td>${subject.stream || "-"}</td>
+            <td>${subject.isCompulsory ? "Compulsory" : "Optional"}</td>
+            <td>${subject.stream ? subject.stream.charAt(0).toUpperCase() + subject.stream.slice(1) : "-"}</td>
             <td>
                 <button class="btn-sm btn-primary edit-subject-btn" data-subject-id="${subject.id}">Edit</button>
                 <button class="btn-sm btn-danger delete-subject-btn" data-subject-id="${subject.id}">Delete</button>
@@ -739,12 +747,11 @@ function showSubjectModal(title, subject) {
                 </label>
             </div>
             <div class="form-group">
-                <label>Stream</label>
+                <label>Principal Stream (A-Level)</label>
                 <select id="subjectStream">
-                    <option value="">None</option>
+                    <option value="">None (O-Level)</option>
                     <option value="arts" ${subject && subject.stream === "arts" ? "selected" : ""}>Arts</option>
                     <option value="science" ${subject && subject.stream === "science" ? "selected" : ""}>Science</option>
-                    <option value="both" ${subject && subject.stream === "both" ? "selected" : ""}>Both</option>
                 </select>
             </div>
             <div class="form-actions">
@@ -1018,9 +1025,24 @@ function showNoteModal(title, note) {
                     <option value="">Select Level First</option>
                 </select>
             </div>
+            <div class="form-group d-none" id="noteClassStreamGroup">
+                <label>Class Stream (O-Level)</label>
+                <select id="noteClassStream">
+                    <option value="">All Streams</option>
+                </select>
+            </div>
+            <div class="form-group d-none" id="noteStreamGroup">
+                <label>Academic Stream (A-Level)</label>
+                <select id="noteStream">
+                    <option value="">All Streams</option>
+                    <option value="arts" ${note && note.stream === "arts" ? "selected" : ""}>Arts</option>
+                    <option value="science" ${note && note.stream === "science" ? "selected" : ""}>Science</option>
+                </select>
+            </div>
             <div class="form-group">
-                <label>Combination (A-Level only)</label>
-                <input type="text" id="noteCombination" value="${note ? note.combination || "" : ""}" placeholder="e.g., PCM, PCB">
+                <label>Combination Codes (A-Level)</label>
+                <input type="text" id="noteCombination" value="${note ? note.combination || "" : ""}" placeholder="e.g. PCM (Optional)">
+                <small>Leave blank to show to all students in the level/class</small>
             </div>
             <div class="form-group">
                 <label>File ${note ? "" : "*"}</label>
@@ -1051,12 +1073,24 @@ function showNoteModal(title, note) {
     document
       .getElementById("cancelNoteBtn")
       .addEventListener("click", closeModal);
+
+    const noteClass = document.getElementById("noteClass");
+    if (noteClass) {
+      noteClass.addEventListener("change", updateNoteClassStreams);
+      if (note && note.classStream) {
+        updateNoteClassStreams().then(() => {
+          document.getElementById("noteClassStream").value = note.classStream;
+        });
+      }
+    }
   });
 }
 
 function updateNoteClassOptions() {
   const level = document.getElementById("noteLevel").value;
   const classSelect = document.getElementById("noteClass");
+  const classStreamGroup = document.getElementById("noteClassStreamGroup");
+  const streamGroup = document.getElementById("noteStreamGroup");
 
   classSelect.innerHTML = '<option value="">Select Class</option>';
 
@@ -1067,11 +1101,35 @@ function updateNoteClassOptions() {
             <option value="s3">S3</option>
             <option value="s4">S4</option>
         `;
+    classStreamGroup.classList.remove("d-none");
+    streamGroup.classList.add("d-none");
   } else if (level === "a-level") {
     classSelect.innerHTML += `
             <option value="s5">S5</option>
             <option value="s6">S6</option>
         `;
+    classStreamGroup.classList.add("d-none");
+    streamGroup.classList.remove("d-none");
+  }
+}
+
+async function updateNoteClassStreams() {
+  const classVal = document.getElementById("noteClass").value;
+  const streamSelect = document.getElementById("noteClassStream");
+  if (!classVal || document.getElementById("noteLevel").value !== "o-level")
+    return;
+
+  streamSelect.innerHTML = '<option value="">Loading...</option>';
+  try {
+    const res = await fetch(`/api/streams?class=${classVal}`);
+    const data = await res.json();
+    const streams = data.data || [];
+    streamSelect.innerHTML = '<option value="">All Streams</option>';
+    streams.forEach((s) => {
+      streamSelect.innerHTML += `<option value="${s.name}">${s.name}</option>`;
+    });
+  } catch (err) {
+    streamSelect.innerHTML = '<option value="">Error</option>';
   }
 }
 
@@ -1093,6 +1151,15 @@ async function saveNote(event) {
   const combination = document.getElementById("noteCombination").value;
   if (combination) formData.append("combination", combination);
 
+  const classLevel = document.getElementById("noteLevel").value;
+  if (classLevel === "o-level") {
+    const classStream = document.getElementById("noteClassStream").value;
+    if (classStream) formData.append("classStream", classStream);
+  } else if (classLevel === "a-level") {
+    const stream = document.getElementById("noteStream").value;
+    if (stream) formData.append("stream", stream);
+  }
+
   const fileInput = document.getElementById("noteFile");
   if (fileInput.files.length > 0) {
     formData.append("file", fileInput.files[0]);
@@ -1105,7 +1172,7 @@ async function saveNote(event) {
     const response = await authFetch(url, {
       method,
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${getToken()}`,
       },
       body: formData,
     });
@@ -1357,6 +1424,18 @@ async function saveResource(event) {
     level: document.getElementById("resourceLevel").value,
     class: document.getElementById("resourceClass").value,
     combination: document.getElementById("resourceCombination").value || null,
+    classStream:
+      document.getElementById("resourceLevel").value === "o-level"
+        ? document.getElementById("noteClassStream")
+          ? document.getElementById("noteClassStream").value
+          : null
+        : null,
+    stream:
+      document.getElementById("resourceLevel").value === "a-level"
+        ? document.getElementById("noteStream")
+          ? document.getElementById("noteStream").value
+          : null
+        : null,
   };
   try {
     const url = id ? `${API_BASE}/resources/${id}` : `${API_BASE}/resources`;
@@ -1444,6 +1523,134 @@ function showModal(title, content, onOpen) {
   modal.addEventListener("click", (e) => {
     if (e.target === modal) closeModal();
   });
+}
+
+// ============================================
+// STREAMS MANAGEMENT (O-Level)
+// ============================================
+
+function renderStreamsTab() {
+  return `
+        <div id="streams" class="tab-content">
+            <div class="section-header">
+                <h2>Class Streams (O-Level)</h2>
+                <div class="header-actions">
+                    <input type="text" id="newStreamName" placeholder="Stream Name (e.g. S1 A)">
+                    <select id="newStreamClass">
+                        <option value="s1">S1</option>
+                        <option value="s2">S2</option>
+                        <option value="s3">S3</option>
+                        <option value="s4">S4</option>
+                    </select>
+                    <button class="btn-primary" id="addStreamBtn">Add Stream</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Stream Name</th>
+                            <th>Class</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="streamsTableBody">
+                        <tr><td colspan="4" class="loading">Loading streams...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function setupStreamsListeners() {
+  const addBtn = document.getElementById("addStreamBtn");
+  if (addBtn) {
+    addBtn.addEventListener("click", addStream);
+  }
+
+  // Global event delegation
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("delete-stream-btn")) {
+      deleteStream(e.target.getAttribute("data-stream-id"));
+    }
+  });
+}
+
+async function loadStreams() {
+  try {
+    const res = await authFetch(`${API_BASE}/streams`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    const streams = data.data || [];
+    const tbody = document.getElementById("streamsTableBody");
+
+    if (streams.length === 0) {
+      tbody.innerHTML =
+        '<tr><td colspan="4" class="no-data">No streams found</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = streams
+      .map(
+        (s) => `
+        <tr>
+            <td><strong>${s.name}</strong></td>
+            <td>${s.class.toUpperCase()}</td>
+            <td>${new Date(s.createdAt).toLocaleDateString()}</td>
+            <td>
+                <button class="btn-sm btn-danger delete-stream-btn" data-stream-id="${s.id}">Delete</button>
+            </td>
+        </tr>
+    `,
+      )
+      .join("");
+  } catch (err) {
+    showError("Failed to load streams");
+  }
+}
+
+async function addStream() {
+  const name = document.getElementById("newStreamName").value.trim();
+  const classVal = document.getElementById("newStreamClass").value;
+
+  if (!name) return showError("Stream name is required");
+
+  try {
+    const res = await authFetch(`${API_BASE}/streams`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ name, class: classVal }),
+    });
+
+    if (!res.ok) throw new Error("Failed to add stream");
+
+    showSuccess("Stream added");
+    document.getElementById("newStreamName").value = "";
+    loadStreams();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function deleteStream(id) {
+  if (!confirm("Delete this stream?")) return;
+
+  try {
+    const res = await authFetch(`${API_BASE}/streams/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!res.ok) throw new Error("Failed to delete stream");
+
+    showSuccess("Stream deleted");
+    loadStreams();
+  } catch (err) {
+    showError("Failed to delete stream");
+  }
 }
 
 function closeModal() {

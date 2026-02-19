@@ -20,7 +20,8 @@ const Subject = sequelize.define(
     },
     code: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: false,
+      unique: true,
     },
     // o-level or a-level
     level: {
@@ -37,9 +38,9 @@ const Subject = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
-    // A-Level stream this subject belongs to (arts, science or both)
+    // A-Level stream this subject belongs to (arts, science)
     stream: {
-      type: DataTypes.ENUM("arts", "science", "both"),
+      type: DataTypes.ENUM("arts", "science"),
       allowNull: true,
     },
     isActive: {
@@ -50,6 +51,28 @@ const Subject = sequelize.define(
   {
     tableName: "subjects",
     timestamps: true,
+    hooks: {
+      beforeCreate: (subject) => {
+        if (subject.name) {
+          subject.name =
+            subject.name.charAt(0).toUpperCase() +
+            subject.name.slice(1).toLowerCase();
+        }
+        if (subject.code) {
+          subject.code = subject.code.toUpperCase().trim();
+        }
+      },
+      beforeUpdate: (subject) => {
+        if (subject.name) {
+          subject.name =
+            subject.name.charAt(0).toUpperCase() +
+            subject.name.slice(1).toLowerCase();
+        }
+        if (subject.code) {
+          subject.code = subject.code.toUpperCase().trim();
+        }
+      },
+    },
     indexes: [
       {
         unique: true,

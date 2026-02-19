@@ -20,12 +20,12 @@ document.addEventListener("DOMContentLoaded", function () {
   const titleEl = document.getElementById("loginTitle");
   const subtitleEl = document.getElementById("loginSubtitle");
   if (role === "admin" && titleEl && subtitleEl) {
-    titleEl.textContent = "🔐 Nsoma Digilib - Admin";
+    titleEl.textContent = "🔐 Nsoma DigLibs - Admin";
     subtitleEl.textContent = "Access your admin account";
     const registerLink = document.getElementById("registerLink");
     if (registerLink) registerLink.style.display = "none";
   } else if (role === "student" && titleEl && subtitleEl) {
-    titleEl.textContent = "📚 Nsoma Digilib - Student";
+    titleEl.textContent = "📚 Nsoma DigLibs - Student";
     subtitleEl.textContent = "Access your student account";
   }
 

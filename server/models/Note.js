@@ -36,20 +36,19 @@ const Note = sequelize.define(
       type: DataTypes.ENUM("o-level", "a-level"),
       allowNull: false,
     },
+    // O-Level: optional — if set, only students in this class stream see this note
+    classStream: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // A-Level: arts or science — determines which stream students see this note
+    stream: {
+      type: DataTypes.ENUM("arts", "science"),
+      allowNull: true,
+    },
+    // A-Level: dynamic combination string (e.g. "PHY-ECO-MAT")
     combination: {
-      type: DataTypes.ENUM(
-        "PCM",
-        "PCB",
-        "BCG",
-        "HEG",
-        "HEL",
-        "MEG",
-        "DEG",
-        "MPG",
-        "BCM",
-        "HGL",
-        "AKR",
-      ),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     fileName: {
@@ -101,6 +100,8 @@ const Note = sequelize.define(
       { fields: ["subject"] },
       { fields: ["class"] },
       { fields: ["level"] },
+      { fields: ["classStream"] },
+      { fields: ["stream"] },
       { fields: ["subject", "class", "level"] },
       { fields: ["createdAt"] },
     ],

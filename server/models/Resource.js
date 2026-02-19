@@ -40,20 +40,19 @@ const Resource = sequelize.define(
       type: DataTypes.ENUM("o-level", "a-level"),
       allowNull: false,
     },
+    // O-Level: optional — if set, only students in this class stream see this resource
+    classStream: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // A-Level: arts or science — determines which stream students see this resource
+    stream: {
+      type: DataTypes.ENUM("arts", "science"),
+      allowNull: true,
+    },
+    // A-Level: dynamic combination string (e.g. "PHY-ECO-MAT")
     combination: {
-      type: DataTypes.ENUM(
-        "PCM",
-        "PCB",
-        "BCG",
-        "HEG",
-        "HEL",
-        "MEG",
-        "DEG",
-        "MPG",
-        "BCM",
-        "HGL",
-        "AKR",
-      ),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     isActive: {

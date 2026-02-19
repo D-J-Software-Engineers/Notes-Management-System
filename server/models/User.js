@@ -47,20 +47,24 @@ const User = sequelize.define(
       type: DataTypes.ENUM("o-level", "a-level"),
       allowNull: true,
     },
+    // O-Level: e.g. "S1 A", "S1 B"
+    classStream: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // A-Level: "arts" or "science"
+    stream: {
+      type: DataTypes.ENUM("arts", "science"),
+      allowNull: true,
+    },
+    // A-Level: Auto-generated from selectedSubjects (e.g. "PHY-ECO-MAT")
     combination: {
-      type: DataTypes.ENUM(
-        "PCM",
-        "PCB",
-        "BCG",
-        "HEG",
-        "HEL",
-        "MEG",
-        "DEG",
-        "MPG",
-        "BCM",
-        "HGL",
-        "AKR",
-      ),
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    // A-Level: Array of subject codes chosen by student
+    selectedSubjects: {
+      type: DataTypes.JSON,
       allowNull: true,
     },
     isActive: {

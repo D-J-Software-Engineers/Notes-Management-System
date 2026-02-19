@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Student Dashboard - Nsoma Digilib</title>
+    <title>Student Dashboard - Nsoma DigLibs</title>
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/student.css" />
   </head>
@@ -12,7 +12,7 @@
     <!-- Top navigation styled by student.css -->
     <nav class="student-nav">
       <div class="nav-container">
-        <h1 class="nav-logo">📚 Nsoma Digilib</h1>
+        <h1 class="nav-logo">📚 Nsoma DigLibs</h1>
         <div class="nav-user">
           <span id="studentNameNav">Student</span>
           <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -202,8 +202,12 @@
         document.getElementById("studentClass").textContent = (
           user.class || "-"
         ).toUpperCase();
-        document.getElementById("studentCombination").textContent =
-          user.combination || "-";
+
+        const streamInfo =
+          user.level === "o-level"
+            ? user.classStream || "-"
+            : user.combination || user.stream || "-";
+        document.getElementById("studentCombination").textContent = streamInfo;
 
         const statusText = user.isConfirmed ? "Confirmed" : "Pending Approval";
         document.getElementById("studentStatus").textContent = statusText;
@@ -338,6 +342,8 @@
           const params = new URLSearchParams();
           if (user.level) params.append("level", user.level);
           if (user.class) params.append("class", user.class);
+          if (user.classStream) params.append("classStream", user.classStream);
+          if (user.stream) params.append("stream", user.stream);
           if (user.combination) params.append("combination", user.combination);
           params.append("limit", "100");
 
@@ -591,6 +597,8 @@
           const params = new URLSearchParams();
           if (user.level) params.append("level", user.level);
           if (user.class) params.append("class", user.class);
+          if (user.classStream) params.append("classStream", user.classStream);
+          if (user.stream) params.append("stream", user.stream);
           if (user.combination) params.append("combination", user.combination);
           params.append("limit", "100");
 

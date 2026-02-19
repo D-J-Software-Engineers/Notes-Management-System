@@ -1,4 +1,4 @@
-const CACHE_NAME = "nms-v1";
+const CACHE_NAME = "nsoma-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",

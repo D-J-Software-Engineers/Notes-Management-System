@@ -20,6 +20,8 @@ exports.getAllNotes = async (req, res, next) => {
       class: classLevel,
       subject,
       combination,
+      classStream,
+      stream,
       search,
       limit = 20,
       page = 1,
@@ -31,14 +33,27 @@ exports.getAllNotes = async (req, res, next) => {
     if (level) where.level = level;
     if (classLevel) where.class = classLevel;
     if (subject) where.subject = subject;
-    // For A-level: show notes with no combination (all) OR matching combination
+    if (stream) where.stream = stream;
+
     const andConditions = [];
+
+    // O-Level classStream filter:
+    // Show notes with no classStream (for all) OR matching classStream
+    if (classStream) {
+      andConditions.push({
+        [Op.or]: [{ classStream: null }, { classStream }],
+      });
+    }
+
+    // A-Level combination filter:
+    // Show notes with no combination (for all) OR matching combination
     if (combination) {
       andConditions.push({
         [Op.or]: [{ combination: null }, { combination }],
       });
     }
-    // Text search (basic title/description search)
+
+    // Text search
     if (search) {
       andConditions.push({
         [Op.or]: [
@@ -131,7 +146,9 @@ exports.createNote = async (req, res, next) => {
       subject,
       class: classLevel,
       level,
-      combination,
+      combination: combination || null,
+      classStream: classStream || null,
+      stream: stream || null,
       fileName: req.file.filename,
       originalFileName: req.file.originalname,
       filePath: req.file.path,
@@ -172,6 +189,8 @@ exports.updateNote = async (req, res, next) => {
       class: classLevel,
       level,
       combination,
+      classStream,
+      stream,
     } = req.body;
 
     // Update fields
@@ -180,7 +199,9 @@ exports.updateNote = async (req, res, next) => {
     if (subject) note.subject = subject;
     if (classLevel) note.class = classLevel;
     if (level) note.level = level;
-    if (combination) note.combination = combination;
+    if (combination !== undefined) note.combination = combination;
+    if (classStream !== undefined) note.classStream = classStream;
+    if (stream !== undefined) note.stream = stream;
 
     // If new file uploaded, delete old one
     if (req.file) {

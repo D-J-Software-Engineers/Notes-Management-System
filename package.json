@@ -1,5 +1,5 @@
 {
-  "name": "soma-digilib",
+  "name": "Nsoma-DigLibs",
   "version": "1.0.0",
   "description": "Notes management system for Ugandan schools following UNEB curriculum",
   "main": "server/server.js",
@@ -7,6 +7,7 @@
     "start": "node server/server.js",
     "stop": "pm2 stop ecosystem.config.js",
     "dev": "nodemon server/server.js",
+    "setup": "bash setup.sh",
     "seed": "node server/utils/seedDatabase.js",
     "format": "prettier --write \"**/*.{js,json,md,html,css}\"",
     "format:check": "prettier --check \"**/*.{js,json,md,html,css}\"",

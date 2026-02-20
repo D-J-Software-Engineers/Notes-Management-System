@@ -21,6 +21,7 @@ Optimized for **ICT Lab Deployment** and **Offline Access (PWA)**.
 
 ---
 
+<<<<<<< HEAD
 ## 🚀 Deployment Options
 
 Choose the deployment method that fits your environment. **Option A (Docker)** is recommended for the easiest setup.
@@ -86,6 +87,41 @@ Regardless of the installation method:
 
 3. **Offline Installation (PWA)**:
    - On Chrome/Edge, click the **Install** icon in the address bar to add the system to your desktop or phone for offline use.
+=======
+## 🚀 How to Run (ICT Lab Edition)
+
+### 1. Prerequisites (Installation)
+
+Run these commands to install **Docker** and **Node.js** (Ubuntu/Debian):
+
+```bash
+# Install Docker and Compose
+sudo apt update && sudo apt install -y docker.io docker-compose-v2
+
+# Install Node.js (v20)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+```
+
+### 2. Start the System (One Command)
+
+Clone the repository, open a terminal in the folder, and run:
+
+```bash
+npm run setup
+```
+
+This will automatically:
+
+- Configure the environment (`.env`).
+- Start the database and the server.
+- **Seed the Admin account** (Email: `admin@school.com`, Password: `Admin@123`).
+
+### 3. Connect Students (LAN)
+
+1. **Find Server IP**: Run `hostname -I` (Linux) or `ipconfig` (Windows).
+2. **Access App**: Students browse to `http://<SERVER_IP>:5000`.
+>>>>>>> main
 
 ---
 
@@ -94,6 +130,7 @@ Regardless of the installation method:
 - `client/`: Frontend (HTML/CSS/JS)
 - `server/`: Backend (Node.js API)
 - `uploads/`: Stores note files (Ensure this folder is backed up!)
+<<<<<<< HEAD
 - `ecosystem.config.js`: Configuration for keeping the server alive (Manual setup).
 
 ---
@@ -106,3 +143,10 @@ Regardless of the installation method:
   - Admin registration is **disabled** for public users.
   - File uploads are validated to prevent malicious scripts.
   - CSP and Helmet headers are enabled for production safety.
+=======
+
+## 🛠️ Management
+
+- **Stop**: `docker compose down`
+- **View Logs**: `docker compose logs -f`
+>>>>>>> main

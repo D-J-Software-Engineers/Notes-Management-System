@@ -1,10 +1,10 @@
 #!/bin/bash
 
-echo "Starting Notes Management System Setup..."
+echo "🚀 Starting Notes Management System Setup..."
 
 # 1. Create .env if it doesn't exist
 if [ ! -f .env ]; then
-    echo "Creating .env file from template..."
+    echo "📄 Creating .env file from template..."
     cp .env.example .env 2>/dev/null || cat <<EOT >> .env
 PORT=5000
 NODE_ENV=development
@@ -20,7 +20,7 @@ UPLOAD_PATH=./uploads
 ADMIN_EMAIL=admin@school.com
 ADMIN_PASSWORD=Admin@123
 EOT
-    echo ".env file created."
+    echo "✅ .env file created."
 fi
 
 # 2. Check for Docker
@@ -32,29 +32,29 @@ elif docker compose version &> /dev/null; then
 fi
 
 if [ -n "$DOCKER_CMD" ]; then
-    echo "Docker detected ($DOCKER_CMD)! Starting containers..."
+    echo "🐳 Docker detected ($DOCKER_CMD)! Starting containers..."
     $DOCKER_CMD up -d --build
-    echo "System is starting in Docker."
-    echo "Access it at: http://localhost:5000"
-    echo "Note: The admin account will be seeded automatically."
+    echo "✅ System is starting in Docker."
+    echo "📍 Access it at: http://localhost:5000"
+    echo "💡 Note: The admin account will be seeded automatically."
 else
-    echo "Docker Compose not found. Falling back to manual setup..."
+    echo "⚠️  Docker Compose not found. Falling back to manual setup..."
     
     # Check for npm
     if ! command -v npm &> /dev/null; then
-        echo "Error: npm is not installed. Please install Node.js first."
+        echo "❌ Error: npm is not installed. Please install Node.js first."
         exit 1
     fi
 
-    echo "Installing dependencies..."
+    echo "📦 Installing dependencies..."
     npm install
 
-    echo "Setting up database (Requires manual PostgreSQL setup)..."
+    echo "🛠️  Setting up database (Requires manual PostgreSQL setup)..."
     echo "Please ensure PostgreSQL is running and credentials in .env match."
     
-    echo "Seeding admin account..."
+    echo "🌱 Seeding admin account..."
     npm run seed
 
-    echo "Manual setup complete."
-    echo "Start the app with: npm run dev"
+    echo "✅ Manual setup complete."
+    echo "🚀 Start the app with: npm start"
 fi

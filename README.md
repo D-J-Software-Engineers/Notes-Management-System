@@ -31,12 +31,14 @@ The easiest way to fire up the server is using a single Docker command.
 
 1. **Install Prerequisites (If needed)**:
    On Ubuntu/Debian:
+
    ```bash
    sudo apt update && sudo apt install -y docker.io docker-compose-v2
    ```
 
 2. **Start the System**:
    Open a terminal in the folder and run:
+
    ```bash
    docker compose up --build -d
    ```
@@ -56,11 +58,13 @@ The easiest way to fire up the server is using a single Docker command.
 Use this if you prefer to run Node.js and PostgreSQL directly on your Server PC.
 
 #### 1. Prerequisites
+
 - **Node.js**: Installed on the Server PC (v20 recommended).
 - **PostgreSQL**: Installed and running on the Server PC.
 - **Network**: All computers must be connected to the same Router/Switch.
 
 #### 2. Installation
+
 1. **Install Dependencies**:
    ```bash
    npm install
@@ -108,7 +112,7 @@ Regardless of the installation method:
 
 - **Stop System (Docker)**: `docker compose down`
 - **View Logs (Docker)**: `docker compose logs -f`
-- **Security**: 
+- **Security**:
   - Admin registration is **disabled** for public users.
   - File uploads are validated to prevent malicious scripts.
   - CSP and Helmet headers are enabled for production safety.

@@ -56,5 +56,5 @@ else
     npm run seed
 
     echo "✅ Manual setup complete."
-    echo "🚀 Start the app with: npm run dev"
+    echo "🚀 Start the app with: npm start"
 fi

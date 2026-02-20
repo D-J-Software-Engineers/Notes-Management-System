@@ -10,21 +10,20 @@ const {
 } = require("../controllers/subjectController");
 const { protect, authorize } = require("../middleware/auth");
 
-router.use(protect);
+// List & filter subjects - PUBLIC (needed for registration)
+router.get("/", getAllSubjects);
 
-// List & filter subjects, or create new (admin only)
-router.route("/").get(getAllSubjects).post(authorize("admin"), createSubject);
-
-// Level-based listing
+// Level-based listing - PUBLIC
 router.get("/level/:level", getSubjectsByLevel);
 
-// A-Level combinations metadata
+// A-Level combinations metadata - PUBLIC
 router.get("/combinations", getCombinations);
 
-// Update/delete specific subject (admin only)
+// Admin protected routes
+router.post("/", protect, authorize("admin"), createSubject);
 router
   .route("/:id")
-  .put(authorize("admin"), updateSubject)
-  .delete(authorize("admin"), deleteSubject);
+  .put(protect, authorize("admin"), updateSubject)
+  .delete(protect, authorize("admin"), deleteSubject);
 
 module.exports = router;

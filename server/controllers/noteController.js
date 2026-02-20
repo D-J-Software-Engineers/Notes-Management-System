@@ -132,6 +132,8 @@ exports.createNote = async (req, res, next) => {
       class: classLevel,
       level,
       combination,
+      classStream,
+      stream,
     } = req.body;
 
     // Check if file was uploaded

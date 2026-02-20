@@ -21,39 +21,81 @@ Optimized for **ICT Lab Deployment** and **Offline Access (PWA)**.
 
 ---
 
-## 🚀 How to Run (ICT Lab Edition)
+## 🚀 Deployment Options
 
-### 1. Prerequisites (Installation)
+Choose the deployment method that fits your environment. **Option A (Docker)** is recommended for the easiest setup.
 
-Run these commands to install **Docker** and **Node.js** (Ubuntu/Debian):
+### Option A: The Pure Docker Way (Recommended)
 
-```bash
-# Install Docker and Compose
-sudo apt update && sudo apt install -y docker.io docker-compose-v2
+The easiest way to fire up the server is using a single Docker command.
 
-# Install Node.js (v20)
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
-```
+1. **Install Prerequisites (If needed)**:
+   On Ubuntu/Debian:
 
-### 2. Start the System (One Command)
+   ```bash
+   sudo apt update && sudo apt install -y docker.io docker-compose-v2
+   ```
 
-Clone the repository, open a terminal in the folder, and run:
+2. **Start the System**:
+   Open a terminal in the folder and run:
 
-```bash
-npm run setup
-```
+   ```bash
+   docker compose up --build -d
+   ```
 
-This will automatically:
+   This will automatically:
+   - **Build & Link**: Set up the database and the server together.
+   - **Environment**: Use secure default settings automatically.
+   - **Auto-Seed**: Create the Admin account (**Email**: `admin@school.com`, **Password**: `Admin@123`).
 
-- Configure the environment (`.env`).
-- Start the database and the server.
-- **Seed the Admin account** (Email: `admin@school.com`, Password: `Admin@123`).
+3. **Access App**:
+   Open [http://localhost:5000](http://localhost:5000) on the server.
 
-### 3. Connect Students (LAN)
+---
 
-1. **Find Server IP**: Run `hostname -I` (Linux) or `ipconfig` (Windows).
-2. **Access App**: Students browse to `http://<SERVER_IP>:5000`.
+### Option B: Manual Setup (ICT Lab Edition)
+
+Use this if you prefer to run Node.js and PostgreSQL directly on your Server PC.
+
+#### 1. Prerequisites
+
+- **Node.js**: Installed on the Server PC (v20 recommended).
+- **PostgreSQL**: Installed and running on the Server PC.
+- **Network**: All computers must be connected to the same Router/Switch.
+
+#### 2. Installation
+
+1. **Install Dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Configure Database**:
+   - Create a database named `notes_management`.
+   - Ensure your `.env` file matches your DB credentials (see `.env.example`).
+3. **Seed Admin Account**:
+   ```bash
+   npm run seed
+   ```
+4. **Start the System**:
+   ```bash
+   npm start
+   ```
+
+---
+
+## 🌐 Connecting Students (LAN)
+
+Regardless of the installation method:
+
+1. **Find Server IP**:
+   - Run `hostname -I` (Linux) or `ipconfig` (Windows).
+   - Locate the IPv4 Address (e.g., `192.168.1.100`).
+
+2. **Accessing from other PCs**:
+   - Students open a browser and go to: `http://<SERVER_IP>:5000`
+
+3. **Offline Installation (PWA)**:
+   - On Chrome/Edge, click the **Install** icon in the address bar to add the system to your desktop or phone for offline use.
 
 ---
 
@@ -62,8 +104,15 @@ This will automatically:
 - `client/`: Frontend (HTML/CSS/JS)
 - `server/`: Backend (Node.js API)
 - `uploads/`: Stores note files (Ensure this folder is backed up!)
+- `ecosystem.config.js`: Configuration for keeping the server alive (Manual setup).
 
-## 🛠️ Management
+---
 
-- **Stop**: `docker compose down`
-- **View Logs**: `docker compose logs -f`
+## ⚙️ Management & Security
+
+- **Stop System (Docker)**: `docker compose down`
+- **View Logs (Docker)**: `docker compose logs -f`
+- **Security**:
+  - Admin registration is **disabled** for public users.
+  - File uploads are validated to prevent malicious scripts.
+  - CSP and Helmet headers are enabled for production safety.

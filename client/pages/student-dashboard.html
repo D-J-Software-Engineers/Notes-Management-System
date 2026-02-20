@@ -12,7 +12,7 @@
     <!-- Top navigation styled by student.css -->
     <nav class="student-nav">
       <div class="nav-container">
-        <h1 class="nav-logo">📚 Nsoma DigLibs</h1>
+        <h1 class="nav-logo">Nsoma DigLibs</h1>
         <div class="nav-user">
           <span id="studentNameNav">Student</span>
           <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -26,19 +26,17 @@
         <ul class="sidebar-menu">
           <li>
             <a href="#" class="sidebar-link active" data-tab="dashboard"
-              >🏠 Dashboard</a
+              >Dashboard</a
             >
           </li>
           <li>
-            <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
+            <a href="#" class="sidebar-link" data-tab="notes">Notes</a>
           </li>
           <li>
-            <a href="#" class="sidebar-link" data-tab="resources"
-              >🔗 Resources</a
-            >
+            <a href="#" class="sidebar-link" data-tab="resources">Resources</a>
           </li>
           <li>
-            <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
+            <a href="#" class="sidebar-link" data-tab="profile">Profile</a>
           </li>
         </ul>
       </aside>
@@ -467,7 +465,7 @@
 
             return `
             <article class="note-card subject-card" data-subject="${displayName}" data-type="notes" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                <div style="font-size: 3rem; margin-bottom: 1rem;">Note</div>
                 <h3>${displayName}</h3>
                 <span class="note-badge" style="margin-top: 0.5rem;">${count} Notes</span>
             </article>
@@ -694,7 +692,7 @@
 
             return `
             <article class="note-card subject-card" data-subject="${displayName}" data-type="resources" style="cursor: pointer; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 150px;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">🔗</div>
+                <div style="font-size: 3rem; margin-bottom: 1rem;">Link</div>
                 <h3>${displayName}</h3>
                 <span class="note-badge" style="margin-top: 0.5rem;">${count} Resources</span>
             </article>

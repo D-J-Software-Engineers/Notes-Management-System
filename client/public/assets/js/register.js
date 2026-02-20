@@ -18,7 +18,7 @@ class RegisterPage {
   render() {
     const styles = `
             <style>
-                body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; padding: 20px 0; }
+                body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px 0; }
                 .register-card { max-width: 600px; margin: 0 auto; border-radius: 15px; border: none; }
                 .subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
                 .subject-item { border: 1px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer; transition: all 0.2s; }
@@ -39,7 +39,7 @@ class RegisterPage {
                 <div class="card register-card shadow-lg">
                     <div class="card-body p-5">
                         <div style="text-align: center; margin-bottom: 1.5rem">
-                           <h2 style="color: #333;">📚 Nsoma DigLibs</h2>
+                           <h2 style="color: #333;">Nsoma DigLibs</h2>
                            <p class="text-muted">Create your student account</p>
                         </div>
                         <div id="error" class="alert alert-danger d-none"></div>

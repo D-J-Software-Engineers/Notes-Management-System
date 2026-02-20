@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { ErrorResponse } = require("../middleware/errorHandler");
+const { validateLoginSecurity } = require("../utils/securityUtils");
 
 exports.register = async (req, res, next) => {
   try {
@@ -82,9 +83,14 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
-    const user = await User.findByCredentials(email, password);
+    // Find user first
+    const user = await User.findOne({ where: { email } });
+
+    // Use independent security function for tightening login
+    // Pass 'role' to ensure students can't login on admin page and vice versa
+    await validateLoginSecurity(user, password, role);
 
     const token = user.generateAuthToken();
 
@@ -97,7 +103,7 @@ exports.login = async (req, res, next) => {
       },
     });
   } catch (error) {
-    return res.status(401).json({
+    return res.status(error.statusCode || 401).json({
       success: false,
       message: error.message || "Invalid credentials",
     });

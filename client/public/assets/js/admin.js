@@ -85,7 +85,7 @@ function renderApp() {
         <!-- Navigation -->
         <nav class="admin-nav">
             <div class="nav-container">
-                <h1 class="nav-logo">📚 Nsoma DigLibs</h1>
+                <h1 class="nav-logo">Nsoma DigLibs</h1>
                 <div class="nav-user">
                     <span id="adminName">${currentAdmin.name}</span>
                     <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -98,12 +98,12 @@ function renderApp() {
             <!-- Sidebar -->
             <aside class="admin-sidebar">
                 <ul class="sidebar-menu">
-                    <li><a href="#" class="sidebar-link active" data-tab="dashboard">📊 Dashboard</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="students">👥 Students</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="subjects">📖 Subjects</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="streams">🏘️ Streams</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
+                    <li><a href="#" class="sidebar-link active" data-tab="dashboard">Dashboard</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="students">Students</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="subjects">Subjects</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="notes">Notes</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="streams">Streams</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="resources">Resources</a></li>
                 </ul>
             </aside>
 

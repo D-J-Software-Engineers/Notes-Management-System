@@ -21,11 +21,35 @@ const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-// Basic security middleware - CSP relaxed for LAN access
+// TIGHTENING: Security Headers with customized CSP
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disable CSP temporarily for easier LAN/testing
-    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdn.jsdelivr.net",
+          "https://fonts.googleapis.com",
+        ],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: [
+          "'self'",
+          "http://localhost:5000",
+          "http://127.0.0.1:5000",
+          "http://*.local:*",
+          "https://*.jsdelivr.net",
+          "https://cdn.jsdelivr.net",
+        ],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'self'"],
+      },
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   }),
 );
 
@@ -39,7 +63,13 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Middleware
-app.use(cors({ origin: "*" })); // Allow all origins for LAN testing
+// TIGHTENING: CORS Configuration
+const corsOptions = {
+  origin: process.env.CLIENT_URL || "http://localhost:5000", // Allow only own server in production
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,6 +87,13 @@ app.use((req, res, next) => {
 app.use(
   express.static(path.join(__dirname, "../client/public"), {
     setHeaders: (res, filepath) => {
+      if (filepath.endsWith("service-worker.js")) {
+        res.setHeader(
+          "Cache-Control",
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
+        );
+        res.setHeader("Service-Worker-Allowed", "/");
+      }
       if (filepath.endsWith(".js")) {
         res.setHeader("Content-Type", "application/javascript");
       }
@@ -117,7 +154,7 @@ const startServer = async () => {
       console.log("");
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error.message);
+    console.error("Failed to start server:", error.message);
     process.exit(1);
   }
 };
@@ -125,6 +162,6 @@ const startServer = async () => {
 startServer();
 
 process.on("unhandledRejection", (err) => {
-  console.error("❌ Unhandled Promise Rejection:", err.message);
+  console.error("Unhandled Promise Rejection:", err.message);
   process.exit(1);
 });

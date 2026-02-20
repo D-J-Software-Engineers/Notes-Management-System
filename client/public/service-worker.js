@@ -1,4 +1,4 @@
-const CACHE_NAME = "nsoma-v2";
+const CACHE_NAME = "nsoma-v10";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
@@ -7,11 +7,13 @@ const ASSETS_TO_CACHE = [
   "/assets/js/main.js",
   "/assets/js/auth.js",
   "/assets/images/logo.png",
+  "/assets/images/nsoma.png",
   "/manifest.json",
 ];
 
 // Install Event - Cache Assets
 self.addEventListener("install", (event) => {
+  self.skipWaiting(); // Force the waiting service worker to become the active service worker
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
@@ -32,6 +34,7 @@ self.addEventListener("activate", (event) => {
       );
     }),
   );
+  self.clients.claim(); // Take control of all pages immediately
 });
 
 // Fetch Event - Serve from cache, fall back to network

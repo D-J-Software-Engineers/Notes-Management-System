@@ -21,7 +21,15 @@ Optimized for **ICT Lab Deployment** and **Offline Access (PWA)**.
 
 ---
 
+<<<<<<< Updated upstream
+
 ## 🚀 How to Run in the ICT Lab
+
+=======
+
+## How to Run (ICT Lab Edition)
+
+> > > > > > > Stashed changes
 
 ### 1. Prerequisites
 
@@ -63,6 +71,8 @@ To start the system and keep it running (even if you close the terminal):
 npm start
 ```
 
+<<<<<<< Updated upstream
+
 - Information: This uses `pm2` to manage the server.
 - To stop the server: `npm run stop`
 - To check status: `npm run monitor`
@@ -79,19 +89,52 @@ npm start
     - Type the Server IP and Port 5000:
       `http://192.168.1.100:5000` (Replace with your actual IP)
 
-3.  **Install App**:
-    - Click the "Install" icon in the address bar to install it as a native app on Windows or Android.
+3.  **Install App**: - Click the "Install" icon in the address bar to install it as a native app on Windows or Android.
+    =======
+
+### 2. Start the System (The Pure Docker Way)
+
+The easiest way to fire up the server is using a single Docker command. Open a terminal in the folder and run:
+
+```bash
+docker compose up --build
+```
+
+This will automatically:
+
+- **Build & Link**: Set up the database and the server together.
+- **Environment**: Use secure default settings automatically.
+- **Auto-Seed**: Create the Admin account (Email: `admin@school.com`, Password: `Admin@123`).
+
+After it's running, open [http://localhost:5000](http://localhost:5000).
+
+> [!TIP]
+> To run in the background, use `docker compose up -d`.
+
+### 3. Connect Students (LAN)
+
+1. **Find Server IP**: Run `hostname -I` (Linux) or `ipconfig` (Windows).
+2. **Access App**: Students browse to `http://<SERVER_IP>:5000`.
+   > > > > > > > Stashed changes
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 - `client/`: Frontend (HTML/CSS/JS)
 - `server/`: Backend (Node.js API)
 - `uploads/`: Stores note files (Ensure this folder is backed up!)
 - `ecosystem.config.js`: Configuration for keeping the server alive.
 
+<<<<<<< Updated upstream
+
 ## ⚠️ Security Notes
+
+=======
+
+## Management
+
+> > > > > > > Stashed changes
 
 - Admin registration is **disabled** for public users. Create admins via database or seed script.
 - File uploads are validated to prevent viruses/scripts.

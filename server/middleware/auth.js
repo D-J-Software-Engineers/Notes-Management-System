@@ -12,8 +12,6 @@ exports.protect = async (req, res, next) => {
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
-    } else if (req.query.token) {
-      token = req.query.token;
     }
 
     if (!token) {
@@ -48,7 +46,7 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// ✅ ROLE-BASED AUTHORIZATION
+// ROLE-BASED AUTHORIZATION
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

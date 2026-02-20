@@ -21,13 +21,13 @@ const sequelize = new Sequelize(
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log("✅ PostgreSQL Connected");
+    console.log("PostgreSQL Connected");
     console.log(`📊 Database: ${sequelize.config.database}`);
 
     await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
-    console.log("✅ Database tables synchronized");
+    console.log("Database tables synchronized");
   } catch (error) {
-    console.error("❌ PostgreSQL Connection Error:", error.message);
+    console.error("PostgreSQL Connection Error:", error.message);
     process.exit(1);
   }
 };

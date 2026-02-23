@@ -166,6 +166,27 @@ select:focus {
 .d-none {
   display: none !important;
 }
+
 .text-center {
   text-align: center;
+}
+
+.brand-nav {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.brand-nav .navbar-brand,
+.brand-nav .nav-link {
+  color: white !important;
+}
+
+.brand-nav .nav-link:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.brand-header {
+  color: #2c3e50 !important;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
 }

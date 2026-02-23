@@ -1,4 +1,4 @@
-const CACHE_NAME = "nsoma-v10";
+const CACHE_NAME = "nsoma-v13";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
@@ -47,7 +47,7 @@ self.addEventListener("fetch", (event) => {
     // Network First for API calls
     event.respondWith(
       fetch(event.request).catch(() => {
-        // Could return a custom offline JSON response here
+        // return a simple offline JSON so callers don't see an exception
         return new Response(
           JSON.stringify({ success: false, message: "You are offline" }),
           { headers: { "Content-Type": "application/json" } },
@@ -58,7 +58,17 @@ self.addEventListener("fetch", (event) => {
     // Cache First for other assets
     event.respondWith(
       caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
+        if (response) return response;
+        return fetch(event.request).catch((err) => {
+          // network failed (maybe offline); return root page or nothing
+          console.warn(
+            "Service worker fetch failed for",
+            event.request.url,
+            err,
+          );
+          // try to serve a generic fallback if available
+          return caches.match("/");
+        });
       }),
     );
   }

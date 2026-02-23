@@ -8,11 +8,13 @@ const { Op } = require("sequelize");
 // @access  Private
 exports.getAllSubjects = async (req, res, next) => {
   try {
-    const { level, class: classLevel, search } = req.query;
+    const { level, class: classLevel, search, stream } = req.query;
 
     const where = {};
     if (level) where.level = level;
     if (classLevel) where.class = classLevel;
+    // only filter by stream when given (mainly for A-level)
+    if (stream) where.stream = stream;
     if (search) {
       where.name = { [Op.iLike]: `%${search}%` };
     }
@@ -42,9 +44,13 @@ exports.getAllSubjects = async (req, res, next) => {
 exports.getSubjectsByLevel = async (req, res, next) => {
   try {
     const { level } = req.params;
+    const { stream } = req.query;
+
+    const where = { level };
+    if (stream) where.stream = stream;
 
     const subjects = await Subject.findAll({
-      where: { level },
+      where,
       order: [
         ["class", "ASC"],
         ["name", "ASC"],

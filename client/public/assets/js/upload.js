@@ -7,7 +7,7 @@ const UPLOAD_API_BASE = "/api";
 let currentSubjects = [];
 
 const combinationsByStream = {
-  sciences: {
+  science: {
     PCM: "Physics, Chemistry, Math",
     PCB: "Physics, Chemistry, Biology",
     BCG: "Biology, Chemistry, Geography",
@@ -62,14 +62,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       const level = levelSelect.value;
       classSelect.innerHTML = '<option value="">Select class</option>';
 
+      // clear subject list while level is changing
+      const subjectSelect = document.getElementById("subject");
+      if (subjectSelect) {
+        subjectSelect.innerHTML =
+          '<option value="">Select Class First</option>';
+        subjectSelect.disabled = true;
+      }
+
       // Reset Stream/Combination on level change
       if (streamDiv) streamDiv.style.display = "none";
       if (combinationDiv) combinationDiv.style.display = "none";
-      if (streamSelect) streamSelect.value = "";
+      if (streamSelect) {
+        streamSelect.value = "";
+        streamSelect.innerHTML = "";
+      }
       if (combinationSelect)
         combinationSelect.innerHTML =
           '<option value="">Select Stream First</option>';
 
+      // update class options and stream UI depending on level
       if (level === "o-level") {
         classSelect.innerHTML += `
           <option value="s1">S1</option>
@@ -77,23 +89,44 @@ document.addEventListener("DOMContentLoaded", async () => {
           <option value="s3">S3</option>
           <option value="s4">S4</option>
         `;
+        if (streamDiv) {
+          streamDiv.style.display = "block";
+          // label for O-level stream
+          const lbl = streamDiv.querySelector("label");
+          if (lbl) lbl.textContent = "Stream (O-Level)";
+          // options will be populated when class is chosen via loadClassStreams
+          streamSelect.innerHTML =
+            '<option value="">Loading streams...</option>';
+        }
       } else if (level === "a-level") {
         classSelect.innerHTML += `
           <option value="s5">S5</option>
           <option value="s6">S6</option>
         `;
-        if (streamDiv) streamDiv.style.display = "block";
+        if (streamDiv) {
+          streamDiv.style.display = "block";
+          const lbl = streamDiv.querySelector("label");
+          if (lbl) lbl.textContent = "Academic Stream";
+          // static arts/sciences options
+          streamSelect.innerHTML =
+            '<option value="">Select Stream</option>' +
+            '<option value="arts">Arts</option>' +
+            '<option value="science">Science</option>';
+        }
       }
     });
   }
 
-  // Effect: When Class changes, fetch subjects
+  // Effect: When Class changes, fetch subjects and streams (if needed)
   if (classSelect) {
     classSelect.addEventListener("change", () => {
       const level = levelSelect.value;
       const classVal = classSelect.value;
       if (level && classVal) {
         loadSubjects(level, classVal);
+        if (level === "o-level") {
+          loadClassStreams(classVal);
+        }
       } else {
         document.getElementById("subject").innerHTML =
           '<option value="">Select Class First</option>';
@@ -147,6 +180,17 @@ async function handleUploadSubmit(e) {
     return;
   }
 
+  // append stream or classStream depending on level
+  const lvl = document.getElementById("level").value;
+  const streamVal = document.getElementById("stream").value;
+  const comboVal = document.getElementById("combination")?.value;
+  if (lvl === "o-level") {
+    if (streamVal) formData.append("classStream", streamVal);
+  } else if (lvl === "a-level") {
+    if (streamVal) formData.append("stream", streamVal);
+    if (comboVal) formData.append("combination", comboVal);
+  }
+
   try {
     const res = await fetch(`${UPLOAD_API_BASE}/notes`, {
       method: "POST",
@@ -181,6 +225,7 @@ async function loadSubjects(level, classVal) {
   const subjectSelect = document.getElementById("subject");
   if (!subjectSelect) return;
 
+  const previous = subjectSelect.value;
   subjectSelect.innerHTML = '<option value="">Loading...</option>';
 
   try {
@@ -189,6 +234,10 @@ async function loadSubjects(level, classVal) {
       level,
       class: classVal,
     });
+    if (level === "a-level") {
+      const streamVal = document.getElementById("stream")?.value;
+      if (streamVal) params.append("stream", streamVal);
+    }
 
     const res = await fetch(
       `${UPLOAD_API_BASE}/subjects?${params.toString()}`,
@@ -207,6 +256,7 @@ async function loadSubjects(level, classVal) {
     if (currentSubjects.length === 0) {
       subjectSelect.innerHTML =
         '<option value="">No subjects found for this class</option>';
+      subjectSelect.disabled = true;
       return;
     }
 
@@ -215,9 +265,36 @@ async function loadSubjects(level, classVal) {
       currentSubjects
         .map((s) => `<option value="${s.name}">${s.name}</option>`)
         .join("");
+    // try to restore previous value if it still exists
+    if (previous) subjectSelect.value = previous;
+    subjectSelect.disabled = false;
   } catch (err) {
     console.error("Error loading subjects:", err);
     subjectSelect.innerHTML =
       '<option value="">Error loading subjects</option>';
+  }
+}
+
+async function loadClassStreams(classVal) {
+  if (!streamSelect) return;
+  streamSelect.innerHTML = '<option value="">Loading streams...</option>';
+  try {
+    const res = await fetch(`/api/streams?class=${classVal}`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    });
+    const data = await res.json();
+    const streams = data.data || [];
+    if (streams.length === 0) {
+      streamSelect.innerHTML = '<option value="">No streams defined</option>';
+    } else {
+      streamSelect.innerHTML =
+        '<option value="">Select Stream</option>' +
+        streams
+          .map((s) => `<option value="${s.name}">${s.name}</option>`)
+          .join("");
+    }
+  } catch (err) {
+    console.error("Error loading class streams:", err);
+    streamSelect.innerHTML = '<option value="">Error loading streams</option>';
   }
 }

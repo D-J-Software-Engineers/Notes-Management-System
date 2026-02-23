@@ -42,6 +42,15 @@ const errorHandler = (err, req, res, next) => {
     error = new ErrorResponse(message, 400);
   }
 
+  // Sequelize validation errors
+  if (
+    err.name === "SequelizeValidationError" ||
+    err.name === "SequelizeUniqueConstraintError"
+  ) {
+    const message = err.errors.map((e) => e.message).join(", ");
+    error = new ErrorResponse(message, 400);
+  }
+
   // JWT errors
   if (err.name === "JsonWebTokenError") {
     const message = "Invalid token";

@@ -18,6 +18,7 @@ services:
     ports:
       - "5000:5000"
     environment:
+      # database and app settings
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=${DB_NAME:-notes_management}
@@ -26,11 +27,20 @@ services:
       - JWT_SECRET=${JWT_SECRET:-your_super_secret_random_key_change_this}
       - JWT_EXPIRE=${JWT_EXPIRE:-7d}
       - PORT=5000
+
+      # Optional SSL settings (set paths to files inside the container)
+      - SSL_KEY_PATH=/app/certs/localhost-key.pem
+      - SSL_CERT_PATH=/app/certs/localhost.pem
+      - SSL_PORT=5443
+      - REDIRECT_HTTP_TO_HTTPS=false
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
+      # Optional: mount a host folder containing SSL certs (read-only)
+      # create a ./certs directory and place your key/cert there when using HTTPS
+      - ./certs:/app/certs:ro
 
 volumes:
   postgres_data:

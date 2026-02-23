@@ -7,11 +7,17 @@ exports.protect = async (req, res, next) => {
   try {
     let token;
 
+    // standard Authorization header
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
       token = req.headers.authorization.split(" ")[1];
+    }
+
+    // fallback: allow token in query string for simple GETs (e.g. file links)
+    if (!token && req.query && req.query.token) {
+      token = req.query.token;
     }
 
     if (!token) {

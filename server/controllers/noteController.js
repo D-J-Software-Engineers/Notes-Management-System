@@ -141,6 +141,24 @@ exports.createNote = async (req, res, next) => {
       return next(new ErrorResponse("Please upload a file", 400));
     }
 
+    // ensure the referenced subject actually exists and matches level/class
+    const Subject = require("../models/Subject");
+    if (subject) {
+      const subj = await Subject.findOne({
+        where: { name: subject, level, class: classLevel },
+      });
+      if (!subj) {
+        return next(
+          new ErrorResponse(
+            "Subject must be one of the existing subjects registered by admin",
+            400,
+          ),
+        );
+      }
+    } else {
+      return next(new ErrorResponse("Please provide a subject", 400));
+    }
+
     // Create note
     const note = await Note.create({
       title,
@@ -194,6 +212,26 @@ exports.updateNote = async (req, res, next) => {
       classStream,
       stream,
     } = req.body;
+
+    // if subject is being changed, verify it exists
+    if (subject) {
+      const Subject = require("../models/Subject");
+      const subj = await Subject.findOne({
+        where: {
+          name: subject,
+          level: level || note.level,
+          class: classLevel || note.class,
+        },
+      });
+      if (!subj) {
+        return next(
+          new ErrorResponse(
+            "Subject must be one of the existing subjects registered by admin",
+            400,
+          ),
+        );
+      }
+    }
 
     // Update fields
     if (title) note.title = title;

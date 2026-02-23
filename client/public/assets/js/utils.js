@@ -101,8 +101,12 @@ function getLoginRedirectUrl() {
   return "/pages/login.html";
 }
 
-// Authenticated fetch - adds Bearer token, handles 401 by redirecting to login
-async function authFetch(url, options = {}) {
+// Authenticated fetch - adds Bearer token. By default a 401 response will
+// clear the token and redirect the user to the login page. A caller can
+// suppress this behaviour by passing `{ redirect: false }` as the third
+// argument, in which case the response is still returned so the caller can
+// handle it manually.
+async function authFetch(url, options = {}, { redirect = true } = {}) {
   const token = getToken();
   const headers = {
     ...options.headers,
@@ -115,7 +119,7 @@ async function authFetch(url, options = {}) {
     // Network error - don't clear token, let caller handle
     throw networkError;
   }
-  if (res.status === 401) {
+  if (res.status === 401 && redirect) {
     removeToken();
     if (!window.location.pathname.includes("login.html")) {
       window.location.href = getLoginRedirectUrl();

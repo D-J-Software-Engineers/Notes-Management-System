@@ -36,6 +36,9 @@
             <a href="#" class="sidebar-link" data-tab="resources">Resources</a>
           </li>
           <li>
+            <a href="#" class="sidebar-link" data-tab="quizzes">Quizzes</a>
+          </li>
+          <li>
             <a href="#" class="sidebar-link" data-tab="profile">Profile</a>
           </li>
         </ul>
@@ -79,6 +82,10 @@
             <div class="stat-card">
               <h3>Available Resources</h3>
               <p class="stat-number" id="resourcesCount">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Available Quizzes</h3>
+              <p class="stat-number" id="quizzesCount">0</p>
             </div>
           </div>
         </section>
@@ -154,6 +161,23 @@
           </div>
         </section>
 
+        <!-- Quizzes tab -->
+        <section id="quizzesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Available Quizzes</h2>
+            <div class="filters">
+              <input
+                type="text"
+                id="quizSearch"
+                placeholder="Search quizzes..."
+              />
+            </div>
+          </div>
+          <div id="quizzesContainer" class="notes-grid">
+            <!-- Quiz cards will go here -->
+          </div>
+        </section>
+
         <!-- Profile tab -->
         <section id="profileTab" class="tab-content" style="display: none">
           <div class="profile-card">
@@ -184,9 +208,11 @@
       let allNotes = [];
       let allResources = [];
       let currentNotesSubject = null;
+      let currentUser = null; // keep track for tab refresh
 
       document.addEventListener("DOMContentLoaded", async () => {
         const user = await getCurrentUser();
+        currentUser = user;
         if (!user || user.role !== "student") {
           // Not a student or not logged in
           logout();
@@ -232,9 +258,15 @@
         // Sidebar tab switching
         document.querySelectorAll(".sidebar-link").forEach((link) => {
           link.addEventListener("click", (e) => {
-            e.preventDefault();
             const tab = link.getAttribute("data-tab");
-            switchTab(tab);
+            if (tab) {
+              e.preventDefault();
+              switchTab(tab);
+              // if we just opened quizzes, refresh the list in case something changed
+              if (tab === "quizzes" && currentUser) {
+                loadQuizzesForStudent(currentUser);
+              }
+            }
           });
         });
 
@@ -247,11 +279,27 @@
           );
         }
 
-        // Global click handlers for notes
+        // Quiz search
+        const quizSearch = document.getElementById("quizSearch");
+        if (quizSearch) {
+          quizSearch.addEventListener(
+            "input",
+            debounce(() => searchQuizzes(), 300),
+          );
+        }
+
+        // Global click handlers for notes/quizzes/subjects
         document.addEventListener("click", (e) => {
           if (e.target.classList.contains("view-note-btn")) {
             const noteId = e.target.getAttribute("data-note-id");
             viewNote(noteId);
+          } else if (
+            e.target.classList.contains("quiz-view-btn") &&
+            e.target.tagName !== "A"
+          ) {
+            // buttons only – anchors have their own href
+            const quizId = e.target.getAttribute("data-id");
+            viewQuiz(quizId);
           } else if (e.target.classList.contains("subject-card")) {
             const subject = e.target.getAttribute("data-subject");
             const type = e.target.getAttribute("data-type"); // 'notes' or 'resources'
@@ -276,6 +324,7 @@
         // Load notes and resources for this student (filtered by level, class, combination)
         await loadNotesForStudent(user);
         await loadResourcesForStudent(user);
+        await loadQuizzesForStudent(user);
 
         // Back buttons
         const backToNotesBtn = document.getElementById(
@@ -373,6 +422,74 @@
             '<div class="no-data">Could not load notes.</div>';
         }
       }
+
+      // ==========================================
+      // QUIZZES LOGIC
+      // ==========================================
+
+      function renderQuizzesList(quizzes) {
+        const container = document.getElementById("quizzesContainer");
+        if (!container) return;
+        if (!quizzes || quizzes.length === 0) {
+          container.innerHTML =
+            '<div class="no-data">No quizzes available for your class.</div>';
+          return;
+        }
+        container.innerHTML = quizzes
+          .map((quiz) => {
+            // for file quizzes we'll open the view route directly
+            const btnHtml =
+              quiz.type === "plain"
+                ? `<button class="btn-sm btn-primary quiz-view-btn" data-id="${quiz.id}">View</button>`
+                : `<a href="${API_BASE}/quizzes/${quiz.id}/view?token=${getToken()}" data-id="${quiz.id}" target="_blank" class="btn-sm btn-primary quiz-view-btn">View</a>`;
+            return `
+            <article class="note-card" style="position: relative;">
+              <h3>${quiz.title}</h3>
+              <p class="text-secondary small">${quiz.subject}</p>
+              <p class="text-secondary small mb-2">${quiz.level.toUpperCase()} ${quiz.class.toUpperCase()}</p>
+              <div style="position:absolute; bottom:10px; right:10px;">
+                ${btnHtml}
+              </div>
+            </article>
+          `;
+          })
+          .join("");
+      }
+
+      async function searchQuizzes() {
+        const searchInput = document.getElementById("quizSearch");
+        const term = searchInput ? searchInput.value.trim() : "";
+        const user = await getCurrentUser();
+        if (!user) return;
+        // reuse load routine but pass term
+        const params = new URLSearchParams();
+        if (user.level) params.append("level", user.level);
+        if (user.class) params.append("class", user.class);
+        if (user.classStream) params.append("classStream", user.classStream);
+        if (user.stream) params.append("stream", user.stream);
+        if (user.combination) params.append("combination", user.combination);
+        if (term) params.append("search", term);
+
+        let url = `${API_BASE}/quizzes`;
+        const query = params.toString();
+        if (query) url += "?" + query;
+
+        try {
+          const res = await authFetch(url, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            renderQuizzesList(data.data || []);
+          }
+        } catch (err) {
+          console.error("Failed to search quizzes", err);
+        }
+      }
+
+      // ==========================================
+      // NOTES LOGIC
+      // ==========================================
 
       function renderNoteSubjects(notes, officialSubjects) {
         const container = document.getElementById("notesSubjectContainer");
@@ -732,9 +849,45 @@
           .join("");
       }
 
-      function showResourcesSubjects() {
+      async function showResourcesSubjects() {
         document.getElementById("resourcesListView").style.display = "none";
         document.getElementById("resourcesSubjectView").style.display = "block";
+      }
+
+      async function loadQuizzesForStudent(user) {
+        try {
+          const params = new URLSearchParams();
+          if (user.level) params.append("level", user.level);
+          if (user.class) params.append("class", user.class);
+          if (user.classStream) params.append("classStream", user.classStream);
+          if (user.stream) params.append("stream", user.stream);
+          if (user.combination) params.append("combination", user.combination);
+
+          let url = `${API_BASE}/quizzes`;
+          const query = params.toString();
+          if (query) url += "?" + query;
+
+          const res = await authFetch(url, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const quizzes = data.data || [];
+            const quizzesCountEl = document.getElementById("quizzesCount");
+            if (quizzesCountEl) {
+              quizzesCountEl.textContent = quizzes.length;
+            }
+            // render cards in dashboard quiz tab
+            renderQuizzesList(quizzes);
+          }
+        } catch (err) {
+          console.error("Failed to load quizzes count", err);
+          const container = document.getElementById("quizzesContainer");
+          if (container)
+            container.innerHTML =
+              '<div class="no-data">Could not load quizzes.</div>';
+        }
       }
 
       // ==========================================
@@ -750,6 +903,43 @@
         // Direct open with token param
         const url = `${API_BASE}/notes/${id}/view?token=${token}`;
         window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      function viewQuiz(id) {
+        const token = getToken();
+        if (!token) {
+          window.location.href = "/pages/login.html";
+          return;
+        }
+        // fetch quiz metadata to determine type
+        fetch(`${API_BASE}/quizzes/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.data) {
+              const quiz = data.data;
+              if (quiz.type === "plain") {
+                const w = window.open("", "_blank");
+                w.document.write(
+                  `<pre style="white-space:pre-wrap;word-break:break-word;">${quiz.content || ""}</pre>`,
+                );
+              } else {
+                window.open(
+                  `${API_BASE}/quizzes/${id}/view?token=${token}`,
+                  "_blank",
+                );
+              }
+            } else {
+              alert(
+                "Unable to load quiz: " + (data.message || "Unknown error"),
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("Error viewing quiz", err);
+            alert("Unable to load quiz");
+          });
       }
     </script>
   </body>

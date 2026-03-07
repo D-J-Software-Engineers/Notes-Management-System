@@ -1,78 +1,89 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, dialog } = require("electron");
 const path = require("path");
-const { spawn } = require("child_process");
-const waitOn = require("wait-on");
+const fs = require("fs");
 
-let mainWindow;
-let serverProcess;
+// Set up paths for production
+const isDev = !app.isPackaged;
+const userDataPath = app.getPath("userData");
+const dbPath = path.join(userDataPath, "database.sqlite");
 
-function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-        },
-        title: "Nsoma-DigLibs",
-        icon: path.join(__dirname, "client", "public", "assets", "img", "logo.png"),
-    });
-
-    // Load the local server
-    mainWindow.loadURL("http://localhost:5000");
-
-    mainWindow.on("closed", function () {
-        mainWindow = null;
-    });
+// Ensure database exists in writable location
+if (!fs.existsSync(dbPath)) {
+  const templatePath = path.join(__dirname, "database.sqlite");
+  if (fs.existsSync(templatePath)) {
+    try {
+      fs.copyFileSync(templatePath, dbPath);
+    } catch (e) {
+      console.error("Failed to copy database template", e);
+    }
+  }
 }
 
-function startServer() {
-    // Run the express server
-    // DB_DIALECT=sqlite tells the backend to use the local file database
-    const env = { ...process.env, DB_DIALECT: "sqlite", PORT: 5000 };
+// Pass configuration to the server via environment variables
+process.env.DATABASE_STORAGE = dbPath;
+process.env.NODE_ENV = isDev ? "development" : "production";
+process.env.PORT = "5000";
 
-    // Use the built-in node to run the server
-    serverProcess = spawn("node", [path.join(__dirname, "server", "server.js")], {
-        env,
-        stdio: "inherit",
-    });
+let mainWindow;
 
-    serverProcess.on("error", (err) => {
-        console.error("Failed to start server process.", err);
-    });
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+    title: "Nsoma-DigLibs",
+    icon: path.join(__dirname, "client", "public", "assets", "img", "logo.png"),
+  });
+
+  mainWindow.loadURL("http://localhost:5000");
+
+  mainWindow.on("closed", function () {
+    mainWindow = null;
+  });
+
+  // Add shortcuts
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (input.control && input.key.toLowerCase() === "r") {
+      mainWindow.reload();
+      event.preventDefault();
+    }
+    if (input.key === "F5") {
+      mainWindow.reload();
+      event.preventDefault();
+    }
+  });
+}
+
+async function startServer() {
+  try {
+    // Start the server directly in the main process
+    // This removes the need for a separate 'node' executable
+    require("./server/server.js");
+  } catch (err) {
+    dialog.showErrorBox(
+      "Server Start Error",
+      "The internal server failed to start: " + err.message,
+    );
+    app.quit();
+  }
 }
 
 app.on("ready", async () => {
-    startServer();
-
-    // Wait for the server to be up before creating the window
-    try {
-        await waitOn({
-            resources: ["http-get://localhost:5000/api/test"],
-            timeout: 15000,
-        });
-        createWindow();
-    } catch (err) {
-        console.error("Server did not start in time:", err);
-        app.quit();
-    }
+  await startServer();
+  createWindow();
 });
 
 app.on("window-all-closed", function () {
-    if (process.platform !== "darwin") {
-        app.quit();
-    }
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
 
 app.on("activate", function () {
-    if (mainWindow === null) {
-        createWindow();
-    }
-});
-
-// Cleanup server process on exit
-app.on("will-quit", () => {
-    if (serverProcess) {
-        serverProcess.kill();
-    }
+  if (mainWindow === null) {
+    createWindow();
+  }
 });

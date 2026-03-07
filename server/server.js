@@ -14,7 +14,7 @@ const quizRoutes = require("./routes/quizRoutes");
 const streamRoutes = require("./routes/classStreamRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const { errorHandler } = require("./middleware/errorHandler");
-
+const seedDatabase = require("./utils/seedDatabase");
 
 // ... imports
 const fs = require("fs");
@@ -122,6 +122,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   try {
     await connectDB();
+    await seedDatabase();
 
     const os = require("os");
     const addresses = [];

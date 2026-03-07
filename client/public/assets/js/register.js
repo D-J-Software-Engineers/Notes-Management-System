@@ -1,4 +1,7 @@
-const API_URL = window.location.hostname === "localhost" ? "http://localhost:5000/api" : `http://${window.location.hostname}:5000/api`;
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : `http://${window.location.hostname}:5000/api`;
 
 const combinationsByStream = {}; // Now dynamically generated from subjects
 
@@ -109,6 +112,9 @@ class RegisterPage {
                         </form>
                         <div class="text-center mt-4">
                             <span class="text-muted">Already have an account?</span> <a href="/pages/login.html" style="text-decoration: none; font-weight: 600;">Login here</a>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="/pages/login.html" class="btn btn-outline-secondary btn-sm" style="border-radius: 20px; padding: 5px 20px;">← Back to Login</a>
                         </div>
                     </div>
                 </div>

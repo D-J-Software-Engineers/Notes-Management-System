@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/assets/css/styles.css" />
     <link rel="stylesheet" href="/assets/css/student.css" />
   </head>
+
   <body>
     <!-- Top navigation styled by student.css -->
     <nav class="student-nav">
@@ -30,6 +31,14 @@
           </li>
           <li>
             <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="quizzes">❓ Quizzes</a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="resources"
+              >🔗 Resources</a
+            >
           </li>
           <li>
             <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
@@ -72,6 +81,14 @@
               <h3>Available Notes</h3>
               <p class="stat-number" id="notesCount">0</p>
             </div>
+            <div class="stat-card">
+              <h3>Available Quizzes</h3>
+              <p class="stat-number" id="quizzesCount">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Learning Resources</h3>
+              <p class="stat-number" id="resourcesCount">0</p>
+            </div>
           </div>
         </section>
 
@@ -88,6 +105,29 @@
             </div>
           </div>
           <div id="notesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Quizzes tab -->
+        <section id="quizzesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Quizzes & Assessments</h2>
+            <div class="filters">
+              <input
+                type="text"
+                id="quizzesSearch"
+                placeholder="Search quizzes..."
+              />
+            </div>
+          </div>
+          <div id="quizzesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Resources tab -->
+        <section id="resourcesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Extra Resources</h2>
+          </div>
+          <div id="resourcesContainer" class="notes-grid"></div>
         </section>
 
         <!-- Profile tab -->
@@ -117,6 +157,9 @@
     <script src="/assets/js/auth.js"></script>
     <script>
       let allNotes = [];
+      let allQuizzes = [];
+      let currentSubjectNotes = null;
+      let currentSubjectQuizzes = null;
 
       document.addEventListener("DOMContentLoaded", async () => {
         const user = await getCurrentUser();
@@ -170,9 +213,13 @@
         // Notes search
         const notesSearch = document.getElementById("notesSearch");
         if (notesSearch) {
-          notesSearch.addEventListener(
-            "input",
-            debounce((e) => filterNotes(e.target.value), 300),
+          notesSearch.addEventListener("input", () => renderNotes(allNotes));
+        }
+
+        const quizzesSearch = document.getElementById("quizzesSearch");
+        if (quizzesSearch) {
+          quizzesSearch.addEventListener("input", () =>
+            renderQuizzes(allQuizzes),
           );
         }
 
@@ -185,9 +232,17 @@
           }
         });
 
-        // Load notes for this student (filtered by level & class)
-        await loadNotesForStudent(user);
+        // Load data for this student (filtered by level & class)
+        await loadDashboardData(user);
       });
+
+      async function loadDashboardData(user) {
+        await Promise.all([
+          loadNotesForStudent(user),
+          loadQuizzesForStudent(user),
+          loadResourcesForStudent(user),
+        ]);
+      }
 
       function switchTab(tab) {
         document
@@ -256,40 +311,261 @@
           return;
         }
 
-        container.innerHTML = notes
+        if (currentSubjectNotes) {
+          // Show notes for specific subject
+          const filtered = notes.filter(
+            (n) => n.subject === currentSubjectNotes,
+          );
+          const search = document
+            .getElementById("notesSearch")
+            .value.toLowerCase();
+          const searched = filtered.filter(
+            (n) =>
+              n.title.toLowerCase().includes(search) ||
+              (n.description && n.description.toLowerCase().includes(search)),
+          );
+
+          container.innerHTML = `
+          <div class="subject-header">
+            <button class="btn-sm btn-secondary" onclick="clearSubjectFilter('notes')">← Back to Subjects</button>
+            <h3>Subject: ${currentSubjectNotes}</h3>
+          </div>
+          <div class="notes-grid">
+            ${
+              searched
+                .map(
+                  (note) => `
+              <article class="note-card">
+                <div class="note-header">
+                  <h3>${note.title}</h3>
+                  <span class="note-badge">${note.subject}</span>
+                </div>
+                <p class="note-description">
+                  ${note.description || "No description provided."}
+                </p>
+                <div class="note-meta">
+                  <span>Level: ${note.level}</span>
+                  <span>Class: ${note.class.toUpperCase()}</span>
+                  ${note.combination ? `<span>Combination: ${note.combination}</span>` : ""}
+                  <span>Uploaded: ${formatDate(note.createdAt)}</span>
+                </div>
+                <div class="note-actions">
+                  <button class="btn-sm btn-primary download-note-btn" data-note-id="${note.id}" data-note-title="${note.title.replace(/"/g, "&quot;")}">Download</button>
+                </div>
+              </article>
+            `,
+                )
+                .join("") || '<div class="no-data">No results found</div>'
+            }
+          </div>
+        `;
+        } else {
+          // Show subject tiles
+          const subjects = [...new Set(notes.map((n) => n.subject))];
+          container.innerHTML = `
+          <div class="subject-tile-grid">
+            ${subjects
+              .map((subject) => {
+                const count = notes.filter((n) => n.subject === subject).length;
+                return `
+                <div class="subject-tile" onclick="setSubjectFilter('notes', '${subject}')">
+                  <div class="tile-icon">📚</div>
+                  <h4>${subject}</h4>
+                  <p>${count} items</p>
+                </div>
+              `;
+              })
+              .join("")}
+          </div>
+        `;
+        }
+      }
+
+      async function loadQuizzesForStudent(user) {
+        const container = document.getElementById("quizzesContainer");
+        if (!container) return;
+        container.innerHTML = '<div class="loading">Loading quizzes...</div>';
+        try {
+          const res = await fetch(
+            `${API_BASE}/quizzes?level=${user.level}&class=${user.class}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+          const data = await res.json();
+          allQuizzes = data.data || [];
+          document.getElementById("quizzesCount").textContent =
+            allQuizzes.length;
+          renderQuizzes(allQuizzes);
+        } catch (err) {
+          container.innerHTML = '<div class="no-data">Failed to load</div>';
+        }
+      }
+
+      function renderQuizzes(quizzes) {
+        const container = document.getElementById("quizzesContainer");
+        if (!quizzes.length) {
+          container.innerHTML =
+            '<div class="no-data">No quizzes for your class yet.</div>';
+          return;
+        }
+
+        if (currentSubjectQuizzes) {
+          const filtered = quizzes.filter(
+            (q) => q.subject === currentSubjectQuizzes,
+          );
+          const search = document
+            .getElementById("quizzesSearch")
+            .value.toLowerCase();
+          const searched = filtered.filter(
+            (q) =>
+              q.title.toLowerCase().includes(search) ||
+              (q.description && q.description.toLowerCase().includes(search)),
+          );
+
+          container.innerHTML = `
+          <div class="subject-header">
+            <button class="btn-sm btn-secondary" onclick="clearSubjectFilter('quizzes')">← Back to Subjects</button>
+            <h3>Subject: ${currentSubjectQuizzes}</h3>
+          </div>
+          <div class="notes-grid">
+            ${
+              searched
+                .map(
+                  (quiz) => `
+              <article class="note-card">
+                <div class="note-header">
+                  <h3>${quiz.title}</h3>
+                  <span class="note-badge">${quiz.subject}${quiz.topic ? ` - ${quiz.topic}` : ""}</span>
+                </div>
+                <p class="note-description">${quiz.description || ""}</p>
+                <div class="note-actions">
+                  ${
+                    quiz.type === "file"
+                      ? `<button class="btn-sm btn-primary" onclick="downloadQuiz('${quiz.id}', '${quiz.title}')">Download Quiz</button>`
+                      : `<button class="btn-sm btn-success" onclick="viewQuiz('${quiz.id}')">Start Quiz</button>`
+                  }
+                </div>
+              </article>
+            `,
+                )
+                .join("") || '<div class="no-data">No results found</div>'
+            }
+          </div>
+        `;
+        } else {
+          const subjects = [...new Set(quizzes.map((q) => q.subject))];
+          container.innerHTML = `
+          <div class="subject-tile-grid">
+            ${subjects
+              .map((subject) => {
+                const count = quizzes.filter(
+                  (q) => q.subject === subject,
+                ).length;
+                return `
+                <div class="subject-tile" onclick="setSubjectFilter('quizzes', '${subject}')">
+                  <div class="tile-icon">❓</div>
+                  <h4>${subject}</h4>
+                  <p>${count} items</p>
+                </div>
+              `;
+              })
+              .join("")}
+          </div>
+        `;
+        }
+      }
+
+      function setSubjectFilter(type, subject) {
+        if (type === "notes") {
+          currentSubjectNotes = subject;
+          renderNotes(allNotes);
+        } else if (type === "quizzes") {
+          currentSubjectQuizzes = subject;
+          renderQuizzes(allQuizzes);
+        }
+      }
+
+      function clearSubjectFilter(type) {
+        if (type === "notes") {
+          currentSubjectNotes = null;
+          renderNotes(allNotes);
+        } else if (type === "quizzes") {
+          currentSubjectQuizzes = null;
+          renderQuizzes(allQuizzes);
+        }
+      }
+
+      async function loadResourcesForStudent(user) {
+        const container = document.getElementById("resourcesContainer");
+        if (!container) return;
+        try {
+          const res = await fetch(
+            `${API_BASE}/resources?level=${user.level}&class=${user.class}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+          const data = await res.json();
+          const resources = data.data || [];
+          document.getElementById("resourcesCount").textContent =
+            resources.length;
+          renderResources(resources);
+        } catch (err) {}
+      }
+
+      function renderResources(resources) {
+        const container = document.getElementById("resourcesContainer");
+        if (!resources.length) {
+          container.innerHTML =
+            '<div class="no-data">No extra resources for your class yet.</div>';
+          return;
+        }
+        container.innerHTML = resources
           .map(
-            (note) => `
+            (res) => `
           <article class="note-card">
             <div class="note-header">
-              <h3>${note.title}</h3>
-              <span class="note-badge">${note.subject}</span>
+              <h3>${res.title}</h3>
+              <span class="note-badge">${res.subject || "General"}</span>
             </div>
-            <p class="note-description">
-              ${note.description || "No description provided."}
-            </p>
-            <div class="note-meta">
-              <span>Level: ${note.level}</span>
-              <span>Class: ${note.class.toUpperCase()}</span>
-              ${
-                note.combination
-                  ? `<span>Combination: ${note.combination}</span>`
-                  : ""
-              }
-              <span>Uploaded: ${formatDate(note.createdAt)}</span>
-            </div>
+            <p class="note-description">${res.description || ""}</p>
             <div class="note-actions">
-              <button
-                class="btn-sm btn-primary download-note-btn"
-                data-note-id="${note.id}"
-                data-note-title="${note.title.replace(/"/g, "&quot;")}"
-              >
-                Download
-              </button>
+              <a href="${res.url}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none">Open Resource</a>
             </div>
           </article>
         `,
           )
           .join("");
+      }
+
+      async function downloadQuiz(id, title) {
+        try {
+          const res = await fetch(`${API_BASE}/quizzes/${id}/download`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = title.replace(/[^\w\-.]+/g, "_");
+          a.click();
+        } catch (err) {
+          alert("Download failed");
+        }
+      }
+
+      async function viewQuiz(id) {
+        try {
+          const res = await fetch(`${API_BASE}/quizzes/${id}/view`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        } catch (err) {
+          alert("Could not open quiz");
+        }
       }
 
       function filterNotes(term) {

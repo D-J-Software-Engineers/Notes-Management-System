@@ -21,6 +21,10 @@ const Quiz = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    topic: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     subject: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -105,12 +109,14 @@ const Quiz = sequelize.define(
     timestamps: true,
     indexes: [
       { fields: ["title"] },
+      { fields: ["topic"] },
       { fields: ["subject"] },
       { fields: ["class"] },
       { fields: ["level"] },
       { fields: ["classStream"] },
       { fields: ["stream"] },
       { fields: ["subject", "class", "level"] },
+      { fields: ["topic", "subject", "class"] },
       { fields: ["createdAt"] },
     ],
   },

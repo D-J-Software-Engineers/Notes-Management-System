@@ -1,18 +1,12 @@
-const dotenv = require("dotenv");
-dotenv.config();
-
-const { connectDB } = require("../config/db");
 const User = require("../models/User");
 
-const seedAdmin = async () => {
+const seedDatabase = async () => {
   try {
-    await connectDB();
-
     const adminExists = await User.findOne({ where: { role: "admin" } });
 
     if (adminExists) {
-      console.log("Admin already exists");
-      process.exit(0);
+      console.log("Admin already exists. Skipping seed.");
+      return;
     }
 
     const admin = await User.create({
@@ -24,15 +18,11 @@ const seedAdmin = async () => {
       isActive: true,
     });
 
-    console.log("Admin created successfully");
+    console.log("Admin created successfully via auto-seed");
     console.log(`Email: ${admin.email}`);
-    console.log("Password: Check your .env file");
-
-    process.exit(0);
   } catch (error) {
-    console.error("Error:", error.message);
-    process.exit(1);
+    console.error("Auto-seeding error:", error.message);
   }
 };
 
-seedAdmin();
+module.exports = seedDatabase;

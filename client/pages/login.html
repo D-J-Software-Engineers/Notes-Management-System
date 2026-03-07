@@ -113,12 +113,27 @@
       .register-link a:hover {
         text-decoration: underline;
       }
+
+      .btn-back {
+        display: block;
+        text-align: center;
+        margin-top: 1rem;
+        color: #666;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: color 0.3s;
+      }
+
+      .btn-back:hover {
+        color: #333;
+      }
     </style>
   </head>
+
   <body>
     <div class="login-container">
-      <h1>📚 Student Login</h1>
-      <p class="subtitle">Access your student account</p>
+      <h1 id="loginTitle">📚 Student Login</h1>
+      <p id="loginSubtitle" class="subtitle">Access your student account</p>
 
       <div id="errorMessage" class="error-message"></div>
 
@@ -136,9 +151,11 @@
         <button type="submit" class="btn-login" id="loginButton">Login</button>
       </form>
 
-      <div class="register-link">
+      <div id="registerLink" class="register-link">
         Don't have an account? <a href="/pages/register.html">Register here</a>
       </div>
+
+      <a href="/" class="btn-back">← Back to Home</a>
     </div>
 
     <script src="/assets/js/utils.js"></script>

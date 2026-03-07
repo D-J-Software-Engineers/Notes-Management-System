@@ -13,8 +13,10 @@ exports.register = async (req, res, next) => {
       combination,
     } = req.body;
 
-    const userRole = role || "student";
-    const isConfirmed = userRole === "admin";
+    const userRole = "student"; // Force student role for registration
+    const requireConfirmation =
+      process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
+    const isConfirmed = userRole === "admin" || !requireConfirmation;
 
     const user = await User.create({
       name,

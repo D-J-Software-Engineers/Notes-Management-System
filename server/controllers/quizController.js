@@ -17,6 +17,7 @@ exports.getAllQuizzes = async (req, res, next) => {
       combination,
       classStream,
       stream,
+      topic,
       search,
       limit = 20,
       page = 1,
@@ -28,6 +29,7 @@ exports.getAllQuizzes = async (req, res, next) => {
     if (classLevel) where.class = classLevel;
     if (subject) where.subject = subject;
     if (stream) where.stream = stream;
+    if (topic) where.topic = topic;
 
     const andConditions = [];
 
@@ -123,6 +125,7 @@ exports.createQuiz = async (req, res, next) => {
       combination,
       classStream,
       stream,
+      topic,
       type,
       content,
     } = req.body;
@@ -130,6 +133,7 @@ exports.createQuiz = async (req, res, next) => {
     const quizData = {
       title,
       description,
+      topic,
       subject,
       class: classLevel,
       level,
@@ -201,12 +205,14 @@ exports.updateQuiz = async (req, res, next) => {
       combination,
       classStream,
       stream,
+      topic,
       type,
       content,
     } = req.body;
 
     if (title) quiz.title = title;
     if (description) quiz.description = description;
+    if (topic) quiz.topic = topic;
     if (subject) quiz.subject = subject;
     if (classLevel) quiz.class = classLevel;
     if (level) quiz.level = level;

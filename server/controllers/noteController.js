@@ -246,6 +246,27 @@ exports.downloadNote = async (req, res, next) => {
   }
 };
 
+// @desc    View note inline (opens in browser)
+// @route   GET /api/notes/:id/view
+// @access  Private
+exports.viewNote = async (req, res, next) => {
+  try {
+    const note = await Note.findByPk(req.params.id);
+
+    if (!note) {
+      return next(new ErrorResponse("Note not found", 404));
+    }
+
+    // Increment view count
+    await note.incrementViews();
+
+    // Serve file inline so the browser can display it (PDF, image, etc.)
+    res.sendFile(path.resolve(note.filePath));
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Get recent notes
 // @route   GET /api/notes/recent
 // @access  Private

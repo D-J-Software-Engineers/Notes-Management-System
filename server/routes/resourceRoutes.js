@@ -6,12 +6,15 @@ const {
   createResource,
   updateResource,
   deleteResource,
+  downloadResource,
 } = require("../controllers/resourceController");
 const { protect, authorize } = require("../middleware/auth");
+const { upload } = require("../middleware/upload");
 
 router.get("/", protect, getAllResources);
 router.get("/:id", protect, getResource);
-router.post("/", protect, authorize("admin"), createResource);
+router.get("/:id/download", protect, downloadResource);
+router.post("/", protect, authorize("admin"), upload.single("file"), createResource);
 router.put("/:id", protect, authorize("admin"), updateResource);
 router.delete("/:id", protect, authorize("admin"), deleteResource);
 

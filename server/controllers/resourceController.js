@@ -112,16 +112,18 @@ exports.createResource = async (req, res, next) => {
       classStream,
       stream,
       combination,
+      resourceType,
     } = req.body;
-    if (!title || !url || !classLevel || !level) {
+
+    if (!title || !classLevel || !level) {
       return next(
-        new ErrorResponse("Title, URL, class, and level are required", 400),
+        new ErrorResponse("Title, class, and level are required", 400),
       );
     }
-    const resource = await Resource.create({
+
+    let resourceData = {
       title,
       description,
-      url,
       subject: subject || null,
       class: classLevel,
       level,
@@ -129,13 +131,44 @@ exports.createResource = async (req, res, next) => {
       classStream: classStream || null,
       stream: stream || null,
       addedById: req.user.id,
-    });
+    };
+
+    // Handle URL-based resources
+    if (resourceType === "url" || !resourceType) {
+      if (!url) {
+        return next(new ErrorResponse("URL is required for URL-based resources", 400));
+      }
+      resourceData.url = url;
+      resourceData.resourceType = "url";
+    }
+    // Handle file-based resources
+    else if (resourceType === "file") {
+      if (!req.file) {
+        return next(new ErrorResponse("Please upload a file", 400));
+      }
+      resourceData.url = null; // No URL for file-based resources
+      resourceData.resourceType = "file";
+      resourceData.fileName = req.file.filename;
+      resourceData.originalFileName = req.file.originalname;
+      resourceData.filePath = req.file.path;
+      resourceData.fileSize = req.file.size;
+      resourceData.fileType = req.file.mimetype;
+    } else {
+      return next(new ErrorResponse("Invalid resource type. Must be 'url' or 'file'", 400));
+    }
+
+    const resource = await Resource.create(resourceData);
     res.status(201).json({
       success: true,
       message: "Resource added successfully",
       data: resource,
     });
   } catch (error) {
+    // Delete uploaded file if resource creation fails
+    if (req.file) {
+      const fs = require("fs").promises;
+      await fs.unlink(req.file.path).catch(console.error);
+    }
     next(error);
   }
 };
@@ -176,6 +209,35 @@ exports.updateResource = async (req, res, next) => {
   }
 };
 
+// @desc    Download resource file
+// @route   GET /api/resources/:id/download
+// @access  Private
+exports.downloadResource = async (req, res, next) => {
+  try {
+    const resource = await Resource.findByPk(req.params.id);
+
+    if (!resource) {
+      return next(new ErrorResponse("Resource not found", 404));
+    }
+
+    // Only allow downloading file-based resources
+    if (resource.resourceType !== "file" || !resource.filePath) {
+      return next(new ErrorResponse("This resource is not available for download", 400));
+    }
+
+    // Check if file exists
+    const fs = require("fs");
+    if (!fs.existsSync(resource.filePath)) {
+      return next(new ErrorResponse("File not found", 404));
+    }
+
+    // Send file
+    res.download(resource.filePath, resource.originalFileName);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete resource
 // @route   DELETE /api/resources/:id
 // @access  Private (Admin only)
@@ -183,6 +245,13 @@ exports.deleteResource = async (req, res, next) => {
   try {
     const resource = await Resource.findByPk(req.params.id);
     if (!resource) return next(new ErrorResponse("Resource not found", 404));
+
+    // Delete associated file if it exists
+    if (resource.resourceType === "file" && resource.filePath) {
+      const fs = require("fs").promises;
+      await fs.unlink(resource.filePath).catch(console.error);
+    }
+
     await resource.destroy();
     res.status(200).json({ success: true, message: "Resource deleted" });
   } catch (error) {

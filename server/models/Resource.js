@@ -23,10 +23,35 @@ const Resource = sequelize.define(
     },
     url: {
       type: DataTypes.TEXT,
-      allowNull: false,
+      allowNull: true, // Made optional to support file uploads
       validate: {
-        notEmpty: { msg: "Please provide a URL" },
+        notEmpty: { msg: "Please provide a URL or upload a file" },
       },
+    },
+    fileName: {
+      type: DataTypes.STRING,
+      allowNull: true, // For uploaded files
+    },
+    originalFileName: {
+      type: DataTypes.STRING,
+      allowNull: true, // For uploaded files
+    },
+    filePath: {
+      type: DataTypes.STRING,
+      allowNull: true, // For uploaded files
+    },
+    fileSize: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // For uploaded files
+    },
+    fileType: {
+      type: DataTypes.STRING,
+      allowNull: true, // For uploaded files (e.g., 'video/mp4')
+    },
+    resourceType: {
+      type: DataTypes.ENUM("url", "file"),
+      defaultValue: "url",
+      allowNull: false,
     },
     subject: {
       type: DataTypes.STRING,

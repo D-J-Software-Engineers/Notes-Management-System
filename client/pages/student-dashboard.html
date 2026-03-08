@@ -235,13 +235,14 @@
         }
 
         // Global click handler for download buttons
-        document.addEventListener("click", (e) => {
-          if (e.target.classList.contains("download-note-btn")) {
-            const noteId = e.target.getAttribute("data-note-id");
-            const noteTitle = e.target.getAttribute("data-note-title");
-            downloadNote(noteId, noteTitle);
-          }
-        });
+        // DISABLED: Download functionality has been deactivated
+        // document.addEventListener("click", (e) => {
+        //   if (e.target.classList.contains("download-note-btn")) {
+        //     const noteId = e.target.getAttribute("data-note-id");
+        //     const noteTitle = e.target.getAttribute("data-note-title");
+        //     downloadNote(noteId, noteTitle);
+        //   }
+        // });
 
         // Load data for this student (filtered by level & class)
         await loadDashboardData(user);
@@ -362,7 +363,7 @@
                 </div>
                 <div class="note-actions">
                   <button class="btn-sm btn-success" onclick="viewNote('${note.id}')">View</button>
-                  <button class="btn-sm btn-primary download-note-btn" data-note-id="${note.id}" data-note-title="${note.title.replace(/"/g, "&quot;")}">Download</button>
+                  <button class="btn-sm btn-primary download-note-btn" data-note-id="${note.id}" data-note-title="${note.title.replace(/"/g, "&quot;")}" disabled title="Download functionality is currently disabled">Download</button>
                 </div>
               </article>
             `,
@@ -554,18 +555,36 @@
           <div class="notes-grid">
             ${filtered
               .map(
-                (res) => `
-              <article class="note-card">
-                <div class="note-header">
-                  <h3>${res.title}</h3>
-                  <span class="note-badge">${res.subject || "General"}</span>
-                </div>
-                <p class="note-description">${res.description || ""}</p>
-                <div class="note-actions">
-                  <a href="${res.url}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none">Open Resource</a>
-                </div>
-              </article>
-            `,
+                (res) => {
+                  let actionButton = '';
+                  if (res.resourceType === 'file' && res.fileType && res.fileType.startsWith('video/')) {
+                    // Display video player for MP4 files
+                    actionButton = `
+                      <video controls style="width: 100%; max-width: 300px; margin-top: 10px;">
+                        <source src="/api/resources/${res.id}/download" type="${res.fileType}">
+                        Your browser does not support the video tag.
+                      </video>
+                    `;
+                  } else if (res.resourceType === 'file') {
+                    // Download button for other file types
+                    actionButton = `<a href="/api/resources/${res.id}/download" class="btn-sm btn-primary" style="text-decoration:none" download>Download File</a>`;
+                  } else {
+                    // Link for URL-based resources
+                    actionButton = `<a href="${res.url}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none">Open Resource</a>`;
+                  }
+                  return `
+                  <article class="note-card">
+                    <div class="note-header">
+                      <h3>${res.title}</h3>
+                      <span class="note-badge">${res.subject || "General"}</span>
+                    </div>
+                    <p class="note-description">${res.description || ""}</p>
+                    <div class="note-actions">
+                      ${actionButton}
+                    </div>
+                  </article>
+                `;
+                },
               )
               .join("")}
           </div>

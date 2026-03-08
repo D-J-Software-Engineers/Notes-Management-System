@@ -32,6 +32,7 @@ const fileFilter = (req, file, cb) => {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "video/mp4",
   ];
 
   // Allowed extensions (Double check)
@@ -44,6 +45,7 @@ const fileFilter = (req, file, cb) => {
     ".docx",
     ".ppt",
     ".pptx",
+    ".mp4",
   ];
 
   const ext = path.extname(file.originalname).toLowerCase();
@@ -56,7 +58,7 @@ const fileFilter = (req, file, cb) => {
   } else {
     cb(
       new Error(
-        "Invalid file type. Only Images, PDF, Word, and PowerPoint files are allowed.",
+        "Invalid file type. Only Images, PDF, Word, PowerPoint, and MP4 video files are allowed.",
       ),
     );
   }

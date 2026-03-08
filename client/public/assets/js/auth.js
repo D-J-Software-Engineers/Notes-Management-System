@@ -3,7 +3,7 @@
 // Handles login, registration, and auth state
 // ============================================
 
-const API_BASE = "/api";
+// API_BASE is globally defined in utils.js
 
 // Token management functions
 function setToken(token) {

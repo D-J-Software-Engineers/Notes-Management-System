@@ -3,7 +3,7 @@
 // Reuses the same API as admin dashboard, but in a dedicated form page
 // ============================================
 
-const UPLOAD_API_BASE = "/api";
+// API_BASE is globally defined in utils.js
 
 document.addEventListener("DOMContentLoaded", async () => {
   // Ensure only admins can access this page
@@ -76,7 +76,7 @@ async function handleUploadSubmit(e) {
   }
 
   try {
-    const res = await fetch(`${UPLOAD_API_BASE}/notes`, {
+    const res = await fetch(`${API_BASE}/notes`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${getToken()}`,

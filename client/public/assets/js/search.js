@@ -3,7 +3,7 @@
 // Students can search, filter and download notes only (no editing)
 // ============================================
 
-const SEARCH_API_BASE = "/api";
+// API_BASE is globally defined in utils.js
 let searchNotesCache = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -67,7 +67,7 @@ async function loadAllNotes(user) {
     if (user.level) params.append("level", user.level);
     if (user.class) params.append("class", user.class);
 
-    let url = `${SEARCH_API_BASE}/notes`;
+    let url = `${API_BASE}/notes`;
     const query = params.toString();
     if (query) url += "?" + query;
 
@@ -171,7 +171,7 @@ function renderSearchNotes(notes) {
 
 async function downloadSearchNote(id, title) {
   try {
-    const res = await fetch(`${SEARCH_API_BASE}/notes/${id}/download`, {
+    const res = await fetch(`${API_BASE}/notes/${id}/download`, {
       headers: {
         Authorization: `Bearer ${getToken()}`,
       },

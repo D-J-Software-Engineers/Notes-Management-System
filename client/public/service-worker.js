@@ -75,7 +75,7 @@ self.addEventListener("fetch", (event) => {
             event.request.url,
             err,
           );
-          return null;
+          return new Response("", { status: 404, statusText: "Not Found" });
         });
       }),
     );

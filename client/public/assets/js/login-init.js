@@ -44,4 +44,71 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   }
+
+  // --- Server Settings for Mobile/LAN ---
+  const settingsToggle = document.getElementById("settingsToggle");
+  const serverSettings = document.getElementById("serverSettings");
+  const saveIpBtn = document.getElementById("saveIpBtn");
+  const testConnBtn = document.getElementById("testConnBtn");
+  const serverIpInput = document.getElementById("serverIp");
+  const currentApiBaseEl = document.getElementById("currentApiBase");
+
+  if (settingsToggle && serverSettings) {
+    settingsToggle.addEventListener("click", () => {
+      serverSettings.classList.toggle("show");
+    });
+  }
+
+  if (currentApiBaseEl) {
+    currentApiBaseEl.textContent = window.API_BASE || "/api";
+  }
+
+  if (saveIpBtn && serverIpInput) {
+    // Pre-fill with existing IP if any
+    const savedIp = localStorage.getItem("serverIp");
+    if (savedIp) serverIpInput.value = savedIp;
+
+    saveIpBtn.addEventListener("click", () => {
+      const newIp = serverIpInput.value.trim();
+      if (!newIp) {
+        localStorage.removeItem("serverIp");
+        alert("Reset to default (localhost)");
+      } else {
+        // Simple validation
+        if (!newIp.includes(".")) {
+          alert("Please enter a valid IP address or hostname");
+          return;
+        }
+        localStorage.setItem("serverIp", newIp);
+        alert("Settings saved! Reloading...");
+      }
+      window.location.reload();
+    });
+  }
+
+  if (testConnBtn && serverIpInput) {
+    testConnBtn.addEventListener("click", async () => {
+      const ip = serverIpInput.value.trim() || window.location.host;
+      const testUrl = `http://${ip}/api/test`;
+
+      testConnBtn.disabled = true;
+      testConnBtn.textContent = "Testing...";
+
+      try {
+        const res = await fetch(testUrl).catch(() => ({ ok: false }));
+        if (res.ok) {
+          alert("✅ Success! Connection established.");
+        } else {
+          alert(
+            "❌ Failed. Ensure the server is running and you are on the same network.",
+          );
+        }
+      } catch (err) {
+        alert("❌ Error: " + err.message);
+      } finally {
+        testConnBtn.disabled = false;
+        testConnBtn.textContent = "Test";
+      }
+    });
+  }
 });

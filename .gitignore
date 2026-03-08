@@ -21,3 +21,26 @@ yarn-error.log*
 .pm2/
 pids/
 *.pid
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database (local data)
+database.sqlite
+
+# Android / Capacitor build artifacts
+android/app/src/main/res/drawable-*
+android/app/src/main/res/mipmap-*
+android/app/src/main/res/values/ic_launcher_background.xml
+
+# Local development assets and specific client pages
+assets/
+client/public/pages/
+

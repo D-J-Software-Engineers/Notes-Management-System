@@ -3,7 +3,7 @@
 // Handles all admin operations - JS-driven UI
 // ============================================
 
-const API_BASE = "/api";
+// API_BASE is globally defined in utils.js
 let currentAdmin = null;
 let allStudents = [];
 let allSubjects = [];

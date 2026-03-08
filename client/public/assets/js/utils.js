@@ -19,6 +19,12 @@ function removeToken() {
   localStorage.removeItem("user");
 }
 
+// Global API Base initialization for LAN/Mobile access
+var API_BASE = localStorage.getItem("serverIp")
+  ? `http://${localStorage.getItem("serverIp")}/api`
+  : "/api";
+window.API_BASE = API_BASE;
+
 // Check if user is authenticated
 function isAuthenticated() {
   return !!getToken();

@@ -15,7 +15,7 @@ const connectDB = async () => {
     console.log("SQLite Connected");
     console.log(`📊 Database: SQLite offline file`);
 
-    await sequelize.sync({ alter: process.env.NODE_ENV === "development" });
+    await sequelize.sync();
     console.log("Database tables synchronized");
   } catch (error) {
     console.error("SQLite Connection Error:", error.message);

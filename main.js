@@ -13,9 +13,12 @@ if (!fs.existsSync(dbPath)) {
   if (fs.existsSync(templatePath)) {
     try {
       fs.copyFileSync(templatePath, dbPath);
+      console.log("Database copied successfully");
     } catch (e) {
       console.error("Failed to copy database template", e);
     }
+  } else {
+    console.log("Template database not found at", templatePath);
   }
 }
 
@@ -27,6 +30,7 @@ process.env.PORT = "5000";
 let mainWindow;
 
 function createWindow() {
+  console.log("Creating window");
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -35,7 +39,7 @@ function createWindow() {
       contextIsolation: true,
     },
     title: "Nsoma-DigLibs",
-    icon: path.join(__dirname, "client", "public", "assets", "img", "logo.png"),
+    icon: path.join(__dirname, "client", "public", "assets", "images", "logo.png"),
   });
 
   mainWindow.loadURL("http://localhost:5000");
@@ -59,10 +63,13 @@ function createWindow() {
 
 async function startServer() {
   try {
+    console.log("Starting server");
     // Start the server directly in the main process
     // This removes the need for a separate 'node' executable
     require("./server/server.js");
+    console.log("Server required successfully");
   } catch (err) {
+    console.error("Server start error:", err);
     dialog.showErrorBox(
       "Server Start Error",
       "The internal server failed to start: " + err.message,
@@ -72,8 +79,13 @@ async function startServer() {
 }
 
 app.on("ready", async () => {
+  console.log("App ready");
   await startServer();
-  createWindow();
+  // Wait a bit for server to start
+  setTimeout(() => {
+    console.log("Creating window after delay");
+    createWindow();
+  }, 2000);
 });
 
 app.on("window-all-closed", function () {

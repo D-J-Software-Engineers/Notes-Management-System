@@ -44,7 +44,7 @@
         "nsis",
         "portable"
       ],
-      "icon": "client/public/assets/img/logo.png"
+      "icon": "client/public/assets/images/logo.png"
     },
     "npmRebuild": false,
     "buildDependenciesFromSource": false
@@ -85,7 +85,7 @@
     "globals": "^17.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "nodemon": "^3.0.2",
+    "nodemon": "^3.1.14",
     "prettier": "^3.8.1"
   }
 }

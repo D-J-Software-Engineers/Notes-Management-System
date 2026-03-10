@@ -13,7 +13,8 @@ class RegisterPage {
       combination: "",
       classStream: "",
       stream: "",
-      selectedSubjects: [],
+      selectedPrincipals: [],
+      selectedSubsidiaries: [],
     };
     this.render();
   }
@@ -23,11 +24,14 @@ class RegisterPage {
             <style>
                 body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px 0; }
                 .register-card { max-width: 600px; margin: 0 auto; border-radius: 15px; border: none; }
+                .subject-section-title { font-weight: 600; margin-top: 15px; margin-bottom: 5px; color: #444; border-bottom: 2px solid #eee; padding-bottom: 4px; }
                 .subject-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-                .subject-item { border: 1px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer; transition: all 0.2s; }
+                .subject-item { border: 1px solid #ddd; padding: 10px; border-radius: 5px; cursor: pointer; transition: all 0.2s; position: relative; }
                 .subject-item:hover { border-color: #667eea; background: #f8faff; }
                 .subject-item.selected { border-color: #667eea; background: #667eea; color: white; }
                 .subject-item.disabled { opacity: 0.5; cursor: not-allowed; }
+                .subject-item.locked { cursor: default; background: #e9ecef; border-color: #ced4da; color: #6c757d; }
+                .subject-item.locked.selected { background: #6c757d; color: white; }
             </style>
         `;
 
@@ -99,12 +103,20 @@ class RegisterPage {
 
                             <!-- A-Level: Subject Selection -->
                             <div class="mb-4 d-none" id="subjectSelectionGroup">
-                                <label class="form-label">Select 3 Principal Subjects</label>
-                                <div id="subjectGrid" class="subject-grid">
-                                    <!-- Subjects injected here -->
+                                <div class="subject-section-title">Principal Subjects (Select 3)</div>
+                                <div id="principalGrid" class="subject-grid">
+                                    <!-- Principals injected here -->
+                                </div>
+                                <div class="mt-2 mb-3">
+                                    <small id="principalCount" class="text-primary font-weight-bold">Selected: 0/3</small>
+                                </div>
+
+                                <div class="subject-section-title">Subsidiary Subjects (Select 1 additional)</div>
+                                <div id="subsidiaryGrid" class="subject-grid">
+                                    <!-- Subsidiaries injected here -->
                                 </div>
                                 <div class="mt-2">
-                                    <small id="selectionCount" class="text-primary font-weight-bold">Selected: 0/3</small>
+                                    <small id="subsidiaryCount" class="text-primary font-weight-bold">Selected: 1/2 (General Paper included)</small>
                                 </div>
                             </div>
 
@@ -213,76 +225,155 @@ class RegisterPage {
   }
 
   async fetchSubjectsForAlevel(stream) {
-    const grid = document.getElementById("subjectGrid");
-    grid.innerHTML = '<div class="col-span-2 text-center">Loading...</div>';
-    this.formData.selectedSubjects = [];
-    this.updateSelectionUI();
+    const pGrid = document.getElementById("principalGrid");
+    const sGrid = document.getElementById("subsidiaryGrid");
+    pGrid.innerHTML = '<div class="col-span-2 text-center">Loading...</div>';
+    sGrid.innerHTML = "";
+
+    this.formData.selectedPrincipals = [];
+    this.formData.selectedSubsidiaries = [];
 
     try {
-      // Get A-Level subjects for this stream
-      // User picks 3.
-      const res = await fetch(
-        `${API_URL}/subjects?level=a-level&stream=${stream}`,
-      );
+      // Fetch all A-Level subjects
+      const res = await fetch(`${API_URL}/subjects?level=a-level`);
       const data = await res.json();
-      const subjects = data.data || [];
+      const allAlevelSubjects = data.data || [];
 
-      if (subjects.length === 0) {
-        grid.innerHTML =
-          '<div class="col-span-2 text-center text-muted">No subjects found for this stream.</div>';
-        return;
+      // Group by name to avoid S5/S6 duplicates
+      const uniqueSubjectsMap = new Map();
+      allAlevelSubjects.forEach((s) => {
+        if (!uniqueSubjectsMap.has(s.name)) {
+          uniqueSubjectsMap.set(s.name, s);
+        }
+      });
+
+      const uniqueSubjects = Array.from(uniqueSubjectsMap.values());
+
+      // Filter Principals: Not subsidiary AND (stream matches user selection OR stream is both)
+      const principals = uniqueSubjects.filter(
+        (s) =>
+          !s.isSubsidiary && (s.stream === stream || s.stream === "both"),
+      );
+
+      // Filter Subsidiaries: All subjects with isSubsidiary true
+      const subsidiaries = uniqueSubjects.filter((s) => s.isSubsidiary);
+
+      // Render Principals
+      if (principals.length === 0) {
+        pGrid.innerHTML =
+          '<div class="col-span-2 text-center text-muted">No principal subjects found.</div>';
+      } else {
+        pGrid.innerHTML = principals
+          .map(
+            (s) => `
+                        <div class="subject-item principal-item" data-id="${s.id}">
+                            <strong>${s.code || s.name}</strong><br>
+                            <small>${s.code ? s.name : ""}</small>
+                        </div>
+                    `,
+          )
+          .join("");
       }
 
-      grid.innerHTML = subjects
-        .map(
-          (s) => `
-            <div class="subject-item" data-id="${s.id}">
-                <strong>${s.code || s.name}</strong><br>
-                <small>${s.code ? s.name : ""}</small>
-            </div>
-        `,
-        )
-        .join("");
+      // Render Subsidiaries
+      if (subsidiaries.length === 0) {
+        sGrid.innerHTML =
+          '<div class="col-span-2 text-center text-muted">No subsidiary subjects found.</div>';
+      } else {
+        sGrid.innerHTML = subsidiaries
+          .map((s) => {
+            const isGP = s.name === "General Paper";
+            return `
+                        <div class="subject-item subsidiary-item ${isGP ? "selected locked" : ""}" data-id="${s.id}" data-name="${s.name}">
+                            <strong>${s.code || s.name}</strong> ${isGP ? "(Compulsory)" : ""}<br>
+                            <small>${s.code ? s.name : ""}</small>
+                        </div>
+                    `;
+          })
+          .join("");
 
-      // Add click events to items
-      grid.querySelectorAll(".subject-item").forEach((item) => {
-        item.addEventListener("click", () => this.toggleSubject(item));
+        // Auto-select General Paper
+        const gp = subsidiaries.find((s) => s.name === "General Paper");
+        if (gp) this.formData.selectedSubsidiaries.push(gp.id);
+      }
+
+      // Add click events
+      pGrid.querySelectorAll(".principal-item").forEach((item) => {
+        item.addEventListener("click", () => this.togglePrincipal(item));
       });
+
+      sGrid.querySelectorAll(".subsidiary-item").forEach((item) => {
+        if (!item.classList.contains("locked")) {
+          item.addEventListener("click", () => this.toggleSubsidiary(item));
+        }
+      });
+
+      this.updateSelectionUI();
     } catch (err) {
-      grid.innerHTML =
+      pGrid.innerHTML =
         '<div class="text-danger">Failed to load subjects.</div>';
+      console.error(err);
     }
   }
 
-  toggleSubject(item) {
+  togglePrincipal(item) {
     const id = item.getAttribute("data-id");
-    const index = this.formData.selectedSubjects.indexOf(id);
+    const index = this.formData.selectedPrincipals.indexOf(id);
 
     if (index > -1) {
-      // De-select
-      this.formData.selectedSubjects.splice(index, 1);
+      this.formData.selectedPrincipals.splice(index, 1);
       item.classList.remove("selected");
     } else {
-      // Select if not at limit
-      if (this.formData.selectedSubjects.length < 5) {
-        this.formData.selectedSubjects.push(id);
+      if (this.formData.selectedPrincipals.length < 3) {
+        this.formData.selectedPrincipals.push(id);
         item.classList.add("selected");
       }
     }
+    this.updateSelectionUI();
+  }
 
+  toggleSubsidiary(item) {
+    const id = item.getAttribute("data-id");
+    const index = this.formData.selectedSubsidiaries.indexOf(id);
+
+    if (index > -1) {
+      // Don't allow de-selecting GP (though it shouldn't have an event listener anyway)
+      if (item.getAttribute("data-name") === "General Paper") return;
+
+      this.formData.selectedSubsidiaries.splice(index, 1);
+      item.classList.remove("selected");
+    } else {
+      // General Paper is already 1. User can select 1 additional. Total 2.
+      if (this.formData.selectedSubsidiaries.length < 2) {
+        this.formData.selectedSubsidiaries.push(id);
+        item.classList.add("selected");
+      }
+    }
     this.updateSelectionUI();
   }
 
   updateSelectionUI() {
-    const count = this.formData.selectedSubjects.length;
-    document.getElementById("selectionCount").textContent =
-      `Selected: ${count}/5`;
+    const pCount = this.formData.selectedPrincipals.length;
+    const sCount = this.formData.selectedSubsidiaries.length;
 
-    // Disable unselected items if at 3
-    const gridItems = document.querySelectorAll(".subject-item");
-    gridItems.forEach((item) => {
+    document.getElementById("principalCount").textContent =
+      `Selected: ${pCount}/3`;
+    document.getElementById("subsidiaryCount").textContent =
+      `Selected: ${sCount}/2 (General Paper included)`;
+
+    // Disable unselected items if limits reached
+    document.querySelectorAll(".principal-item").forEach((item) => {
       const id = item.getAttribute("data-id");
-      if (count >= 5 && !this.formData.selectedSubjects.includes(id)) {
+      if (pCount >= 3 && !this.formData.selectedPrincipals.includes(id)) {
+        item.classList.add("disabled");
+      } else {
+        item.classList.remove("disabled");
+      }
+    });
+
+    document.querySelectorAll(".subsidiary-item").forEach((item) => {
+      const id = item.getAttribute("data-id");
+      if (sCount >= 2 && !this.formData.selectedSubsidiaries.includes(id)) {
         item.classList.add("disabled");
       } else {
         item.classList.remove("disabled");
@@ -299,8 +390,13 @@ class RegisterPage {
     const password = document.getElementById("password").value;
     const classVal = document.getElementById("class").value;
 
-    if (level === "a-level" && this.formData.selectedSubjects.length === 0) {
-      return this.showError("Please select at least one subject.");
+    if (level === "a-level") {
+      if (this.formData.selectedPrincipals.length < 3) {
+        return this.showError("Please select exactly 3 principal subjects.");
+      }
+      if (this.formData.selectedSubsidiaries.length < 2) {
+        return this.showError("Please select 1 additional subsidiary subject.");
+      }
     }
 
     const payload = {
@@ -315,7 +411,10 @@ class RegisterPage {
       payload.classStream = document.getElementById("classStream").value;
     } else {
       payload.stream = document.getElementById("stream").value;
-      payload.selectedSubjects = this.formData.selectedSubjects;
+      payload.selectedSubjects = [
+        ...this.formData.selectedPrincipals,
+        ...this.formData.selectedSubsidiaries,
+      ];
     }
 
     const submitBtn = document.getElementById("submitBtn");
@@ -355,7 +454,5 @@ class RegisterPage {
     setTimeout(() => errorDiv.classList.add("d-none"), 5000);
   }
 }
-
-window.addEventListener("DOMContentLoaded", () => new RegisterPage());
 
 window.addEventListener("DOMContentLoaded", () => new RegisterPage());

@@ -76,28 +76,37 @@ exports.getSubjectsByLevel = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.createSubject = async (req, res, next) => {
   try {
-    const {
-      name,
-      code,
-      level,
-      class: classLevel,
-      isCompulsory,
-      stream,
-    } = req.body;
+    const { name, code, level, isCompulsory, isSubsidiary, stream } = req.body;
 
-    const subject = await Subject.create({
-      name,
-      code,
-      level,
-      class: classLevel,
-      isCompulsory,
-      stream: stream || null,
-    });
+    // Define classes based on level
+    const classes =
+      level === "o-level" ? ["s1", "s2", "s3", "s4"] : ["s5", "s6"];
+    const createdSubjects = [];
+
+    // Create a subject record for each class in the level
+    for (const classLevel of classes) {
+      const existing = await Subject.findOne({
+        where: { name, level, class: classLevel },
+      });
+
+      if (!existing) {
+        const subject = await Subject.create({
+          name,
+          code,
+          level,
+          class: classLevel,
+          isCompulsory,
+          isSubsidiary: isSubsidiary || false,
+          stream: stream || null,
+        });
+        createdSubjects.push(subject);
+      }
+    }
 
     res.status(201).json({
       success: true,
-      message: "Subject created successfully",
-      data: subject,
+      message: "Subject created successfully for all classes in " + level,
+      data: createdSubjects,
     });
   } catch (error) {
     next(error);
@@ -115,29 +124,35 @@ exports.updateSubject = async (req, res, next) => {
       return next(new ErrorResponse("Subject not found", 404));
     }
 
-    const {
-      name,
-      code,
-      level,
-      class: classLevel,
-      isCompulsory,
-      stream,
-    } = req.body;
+    const { name, code, level, isCompulsory, isSubsidiary, stream } = req.body;
 
-    if (name) subject.name = name;
-    if (typeof code !== "undefined") subject.code = code;
-    if (level) subject.level = level;
-    if (classLevel) subject.class = classLevel;
-    if (typeof isCompulsory !== "undefined")
-      subject.isCompulsory = isCompulsory;
-    subject.stream = stream || null;
+    // Find all subjects in the current level with the same original name
+    const originalName = subject.name;
+    const subjectsToUpdate = await Subject.findAll({
+      where: {
+        name: originalName,
+        level: subject.level,
+      },
+    });
 
-    await subject.save();
+    // We might be changing the level itself, meaning we might have to re-create for different classes or just update existing.
+    // For simplicity, we just update the properties of the existing records found.
+    // A robust system would delete old classes and create new ones if 'level' changes, but assuming level changes are rare.
+    for (const sub of subjectsToUpdate) {
+      if (name) sub.name = name;
+      if (typeof code !== "undefined") sub.code = code;
+      if (level) sub.level = level; // Note: Doesn't auto-create S5/S6 if changing from O to A level
+      if (typeof isCompulsory !== "undefined") sub.isCompulsory = isCompulsory;
+      if (typeof isSubsidiary !== "undefined") sub.isSubsidiary = isSubsidiary;
+      sub.stream = stream || null;
+
+      await sub.save();
+    }
 
     res.status(200).json({
       success: true,
-      message: "Subject updated successfully",
-      data: subject,
+      message: "Subject updated successfully across all associated classes",
+      data: subject, // Return the originally requested subject
     });
   } catch (error) {
     next(error);
@@ -155,11 +170,19 @@ exports.deleteSubject = async (req, res, next) => {
       return next(new ErrorResponse("Subject not found", 404));
     }
 
-    await subject.destroy();
+    const { name, level } = subject;
+
+    // Delete all subjects with the same name and level
+    const deletedCount = await Subject.destroy({
+      where: {
+        name,
+        level,
+      },
+    });
 
     res.status(200).json({
       success: true,
-      message: "Subject deleted successfully",
+      message: `Subject deleted successfully across all associated classes (${deletedCount} records removed)`,
     });
   } catch (error) {
     next(error);

@@ -9,6 +9,7 @@
     "format": "prettier --write \"**/*.{js,json,md,html,css}\"",
     "format:check": "prettier --check \"**/*.{js,json,md,html,css}\"",
     "test": "echo 'No tests yet' && exit 0",
+    "seed": "node server/utils/seedDatabase.js",
     "electron:start": "electron .",
     "electron:build": "electron-builder --win --x64"
   },

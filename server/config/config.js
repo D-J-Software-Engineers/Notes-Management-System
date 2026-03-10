@@ -93,9 +93,13 @@ const ALEVEL_COMBINATIONS = {
   },
 };
 
+// A-Level Subsidiary subjects
+const ALEVEL_SUBSIDIARIES = ["General Paper", "Sub-Math", "SUB-ICT"];
+
 module.exports = {
   JWT_CONFIG,
   CLASSES,
   OLEVEL_SUBJECTS,
   ALEVEL_COMBINATIONS,
+  ALEVEL_SUBSIDIARIES,
 };

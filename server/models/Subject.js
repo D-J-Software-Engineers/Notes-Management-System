@@ -37,6 +37,11 @@ const Subject = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    // For A-level: Subsidiary subjects (e.g. Sub-Math, General Paper, ICT)
+    isSubsidiary: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     // A-Level stream this subject belongs to (arts, science or both)
     stream: {
       type: DataTypes.ENUM("arts", "science", "both"),

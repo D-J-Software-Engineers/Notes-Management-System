@@ -635,14 +635,8 @@ function renderSubjectsTab() {
                     <option value="o-level">O-Level</option>
                     <option value="a-level">A-Level</option>
                 </select>
-                <select id="subjectClassFilter">
-                    <option value="">All Classes</option>
-                    <option value="s1">S1</option>
-                    <option value="s2">S2</option>
-                    <option value="s3">S3</option>
-                    <option value="s4">S4</option>
-                    <option value="s5">S5</option>
-                    <option value="s6">S6</option>
+                <select id="subjectClassFilter" style="display: none;">
+                    <!-- Hidden but kept for any legacy code expecting it -->
                 </select>
             </div>
             <div class="table-container">
@@ -652,14 +646,13 @@ function renderSubjectsTab() {
                             <th>Name</th>
                             <th>Code</th>
                             <th>Level</th>
-                            <th>Class</th>
-                            <th>Compulsory</th>
+                            <th>Type</th>
                             <th>Stream</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="subjectsTableBody">
-                        <tr><td colspan="7" class="loading">Loading subjects...</td></tr>
+                        <tr><td colspan="6" class="loading">Loading subjects...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -670,16 +663,12 @@ function renderSubjectsTab() {
 function setupSubjectsListeners() {
   const addSubjectBtn = document.getElementById("addSubjectBtn");
   const subjectLevelFilter = document.getElementById("subjectLevelFilter");
-  const subjectClassFilter = document.getElementById("subjectClassFilter");
 
   if (addSubjectBtn) {
     addSubjectBtn.addEventListener("click", showAddSubjectModal);
   }
   if (subjectLevelFilter) {
     subjectLevelFilter.addEventListener("change", loadSubjects);
-  }
-  if (subjectClassFilter) {
-    subjectClassFilter.addEventListener("change", loadSubjects);
   }
 
   // Event delegation is handled at document level
@@ -688,12 +677,10 @@ function setupSubjectsListeners() {
 async function loadSubjects() {
   try {
     const level = document.getElementById("subjectLevelFilter").value;
-    const classLevel = document.getElementById("subjectClassFilter").value;
 
     let url = `${API_BASE}/subjects`;
     const params = new URLSearchParams();
     if (level) params.append("level", level);
-    if (classLevel) params.append("class", classLevel);
     if (params.toString()) url += "?" + params.toString();
 
     const response = await fetch(url, {
@@ -703,7 +690,17 @@ async function loadSubjects() {
     if (!response.ok) throw new Error("Failed to load subjects");
 
     const data = await response.json();
-    allSubjects = data.data || [];
+
+    // Group subjects by name and level (since they are duplicated across classes)
+    const uniqueSubjectsMap = new Map();
+    data.data.forEach(sub => {
+      const key = sub.name + "-" + sub.level;
+      if (!uniqueSubjectsMap.has(key)) {
+        uniqueSubjectsMap.set(key, sub);
+      }
+    });
+
+    allSubjects = Array.from(uniqueSubjectsMap.values());
     displaySubjects(allSubjects);
   } catch (error) {
     console.error("Failed to load subjects:", error);
@@ -716,32 +713,30 @@ function displaySubjects(subjects) {
 
   if (subjects.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="7" class="no-data">No subjects found</td></tr>';
+      '<tr><td colspan="6" class="no-data">No subjects found</td></tr>';
     return;
   }
 
   tbody.innerHTML = subjects
     .map(
-      (subject) => `
+      (subject) => {
+        let typeLabel = "Optional";
+        if (subject.isSubsidiary) typeLabel = "Subsidiary";
+        else if (subject.isCompulsory) typeLabel = subject.level === "a-level" ? "Core (Main)" : "Compulsory";
+
+        return `
         <tr>
             <td>${subject.name}</td>
             <td>${subject.code || "-"}</td>
-            <td>${subject.level}</td>
-            <td>${subject.class
-          ? subject.class.toUpperCase()
-          : subject.classes
-            ? subject.classes.join(", ").toUpperCase()
-            : "-"
-        }</td>
-            <td>${subject.isCompulsory ? "Yes" : "No"}</td>
-            <td>${subject.stream || "-"}</td>
+            <td>${subject.level === "o-level" ? "O-Level" : "A-Level"}</td>
+            <td>${typeLabel}</td>
+            <td>${subject.stream ? subject.stream.charAt(0).toUpperCase() + subject.stream.slice(1) : "-"}</td>
             <td>
                 <button class="btn-sm btn-primary edit-subject-btn" data-subject-id="${subject.id}">Edit</button>
                 <button class="btn-sm btn-danger delete-subject-btn" data-subject-id="${subject.id}">Delete</button>
             </td>
         </tr>
-    `,
-    )
+    `})
     .join("");
 }
 
@@ -775,17 +770,23 @@ function showSubjectModal(title, subject) {
                     <option value="a-level" ${subject && subject.level === "a-level" ? "selected" : ""}>A-Level</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Class *</label>
-                <select id="subjectClass" required>
-                    <option value="">Select Level First</option>
-                </select>
+            
+            <div id="oLevelOptions" style="${subject && subject.level === "o-level" ? "display:block" : "display:none"}">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isOLevelOptional" ${subject && !subject.isCompulsory ? "checked" : ""}> Optional Subject (Uncheck for Compulsory)
+                    </label>
+                </div>
             </div>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="subjectCompulsory" ${subject && subject.isCompulsory ? "checked" : ""}> Compulsory Subject
-                </label>
+
+            <div id="aLevelOptions" style="${subject && subject.level === "a-level" ? "display:block" : "display:none"}">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isALevelSubsidiary" ${subject && subject.isSubsidiary ? "checked" : ""}> Subsidiary Subject (Uncheck for Core)
+                    </label>
+                </div>
             </div>
+
             <div class="form-group">
                 <label>Stream</label>
                 <select id="subjectStream">
@@ -805,13 +806,7 @@ function showSubjectModal(title, subject) {
   showModal(title, modalContent, () => {
     const subjectLevel = document.getElementById("subjectLevel");
     if (subjectLevel) {
-      subjectLevel.addEventListener("change", updateSubjectClassOptions);
-      if (subject) {
-        updateSubjectClassOptions();
-        setTimeout(() => {
-          document.getElementById("subjectClass").value = subject.class;
-        }, 10);
-      }
+      subjectLevel.addEventListener("change", updateSubjectTypeOptions);
     }
 
     const form = document.getElementById("subjectForm");
@@ -823,24 +818,20 @@ function showSubjectModal(title, subject) {
   });
 }
 
-function updateSubjectClassOptions() {
+function updateSubjectTypeOptions() {
   const level = document.getElementById("subjectLevel").value;
-  const classSelect = document.getElementById("subjectClass");
-
-  classSelect.innerHTML = '<option value="">Select Class</option>';
+  const oLevelGroup = document.getElementById("oLevelOptions");
+  const aLevelGroup = document.getElementById("aLevelOptions");
 
   if (level === "o-level") {
-    classSelect.innerHTML += `
-            <option value="s1">S1</option>
-            <option value="s2">S2</option>
-            <option value="s3">S3</option>
-            <option value="s4">S4</option>
-        `;
+    oLevelGroup.style.display = "block";
+    aLevelGroup.style.display = "none";
   } else if (level === "a-level") {
-    classSelect.innerHTML += `
-            <option value="s5">S5</option>
-            <option value="s6">S6</option>
-        `;
+    oLevelGroup.style.display = "none";
+    aLevelGroup.style.display = "block";
+  } else {
+    oLevelGroup.style.display = "none";
+    aLevelGroup.style.display = "none";
   }
 }
 
@@ -848,12 +839,30 @@ async function saveSubject(event) {
   event.preventDefault();
 
   const id = document.getElementById("subjectId").value;
-  const subjectData = {
-    name: document.getElementById("subjectName").value,
+  const name = document.getElementById("subjectName").value;
+  const level = document.getElementById("subjectLevel").value;
+
+  if (!name || !level) {
+    showError("Please fill in all required fields");
+    return;
+  }
+
+  let isCompulsory = true;
+  let isSubsidiary = false;
+
+  if (level === "o-level") {
+    isCompulsory = !document.getElementById("isOLevelOptional").checked;
+  } else if (level === "a-level") {
+    isSubsidiary = document.getElementById("isALevelSubsidiary").checked;
+    isCompulsory = !isSubsidiary; // If it's a subsidiary it's not core(compulsory), and vice versa
+  }
+
+  const payload = {
+    name,
     code: document.getElementById("subjectCode").value,
-    level: document.getElementById("subjectLevel").value,
-    class: document.getElementById("subjectClass").value,
-    isCompulsory: document.getElementById("subjectCompulsory").checked,
+    level,
+    isCompulsory,
+    isSubsidiary,
     stream: document.getElementById("subjectStream").value || null,
   };
 
@@ -867,7 +876,7 @@ async function saveSubject(event) {
         ...getAuthHeaders(),
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(subjectData),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

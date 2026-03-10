@@ -127,6 +127,33 @@ const seedALevelSubjects = async () => {
       }
     }
 
+    // Seed A-Level Subsidiaries
+    const { ALEVEL_SUBSIDIARIES } = require("../config/config");
+    for (const sub of ALEVEL_SUBSIDIARIES) {
+      for (const classLevel of ["s5", "s6"]) {
+        const exists = await Subject.findOne({
+          where: {
+            name: sub,
+            level: "a-level",
+            class: classLevel,
+          },
+        });
+
+        if (!exists) {
+          await Subject.create({
+            name: sub,
+            code: sub.substring(0, 3).toUpperCase(),
+            level: "a-level",
+            class: classLevel,
+            isSubsidiary: true,
+            isCompulsory: sub === "General Paper", // GP is compulsory
+            isActive: true,
+          });
+          console.log(`Created A-Level Subsidiary: ${sub} (${classLevel})`);
+        }
+      }
+    }
+
     console.log("A-Level subjects seeded successfully");
   } catch (error) {
     console.error("Error seeding A-Level subjects:", error.message);

@@ -10,21 +10,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: notes_admin
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: notes_management_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     strategy:
       matrix:
         node-version: [20]
@@ -71,11 +56,7 @@ jobs:
           cat > .env << EOF
           NODE_ENV=test
           PORT=5000
-          DB_HOST=localhost
-          DB_PORT=5432
-          DB_NAME=notes_management_test
-          DB_USER=notes_admin
-          DB_PASSWORD=test_password
+          DATABASE_STORAGE=./test-database.sqlite
           JWT_SECRET=test_jwt_secret_key_for_ci
           JWT_EXPIRE=7d
           MAX_FILE_SIZE=10485760
@@ -89,7 +70,7 @@ jobs:
         run: |
           source .env
           node -e "
-          const required = ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD', 'JWT_SECRET'];
+          const required = ['JWT_SECRET'];
           const missing = required.filter(key => !process.env[key]);
           if (missing.length) {
             console.error('❌ Missing required environment variables:', missing);
@@ -98,11 +79,7 @@ jobs:
           console.log('✅ All required environment variables are set');
           "
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: notes_management_test
-          DB_USER: notes_admin
-          DB_PASSWORD: test_password
+          DATABASE_STORAGE: ./test-database.sqlite
           JWT_SECRET: test_jwt_secret_key_for_ci
 
       # 10. Test database connection
@@ -110,17 +87,11 @@ jobs:
         run: |
           node -e "
           const { Sequelize } = require('sequelize');
-          const sequelize = new Sequelize(
-            process.env.DB_NAME,
-            process.env.DB_USER,
-            process.env.DB_PASSWORD,
-            {
-              host: process.env.DB_HOST,
-              port: process.env.DB_PORT,
-              dialect: 'postgres',
-              logging: false
-            }
-          );
+          const sequelize = new Sequelize({
+            dialect: 'sqlite',
+            storage: process.env.DATABASE_STORAGE || './test-database.sqlite',
+            logging: false
+          });
           sequelize.authenticate()
             .then(() => {
               console.log('✅ Database connection successful');
@@ -133,11 +104,7 @@ jobs:
             });
           "
         env:
-          DB_HOST: localhost
-          DB_PORT: 5432
-          DB_NAME: notes_management_test
-          DB_USER: notes_admin
-          DB_PASSWORD: test_password
+          DATABASE_STORAGE: ./test-database.sqlite
           NODE_ENV: test
 
       # 11. Run database migrations/setup

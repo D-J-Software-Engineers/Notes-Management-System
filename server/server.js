@@ -14,6 +14,7 @@ const quizRoutes = require("./routes/quizRoutes");
 const streamRoutes = require("./routes/classStreamRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const { errorHandler } = require("./middleware/errorHandler");
+const { serviceWindowMiddleware } = require("./middleware/serviceCheck");
 const seedDatabase = require("./utils/seedDatabase");
 
 // ... imports
@@ -92,6 +93,7 @@ app.get("/api/test", (req, res) => {
 });
 
 // API routes
+app.use("/api", serviceWindowMiddleware);
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/resources", resourceRoutes);

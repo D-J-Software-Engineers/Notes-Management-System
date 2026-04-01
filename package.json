@@ -75,6 +75,7 @@
   "dependencies": {
     "@capacitor/android": "^5.7.8",
     "@capacitor/core": "^5.7.8",
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^16.4.1",

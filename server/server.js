@@ -85,7 +85,9 @@ app.use("/pages", express.static(path.join(__dirname, "../client/pages")));
 
 // Uploads path: prefer APP-defined path, else project folder.
 // If that is not writable, fall back to per-user local path, then temp path.
-let uploadsPath = path.resolve(process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"));
+let uploadsPath = path.resolve(
+  process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"),
+);
 const fallbackUploadsPath = path.resolve(
   os.homedir(),
   "AppData",
@@ -106,15 +108,22 @@ function ensureUploadsDirectory(dir) {
 try {
   uploadsPath = ensureUploadsDirectory(uploadsPath);
 } catch (err) {
-  console.warn(`Unable to use uploads directory ${uploadsPath}: ${err.message}. Falling back to ${fallbackUploadsPath}`);
+  console.warn(
+    `Unable to use uploads directory ${uploadsPath}: ${err.message}. Falling back to ${fallbackUploadsPath}`,
+  );
   try {
     uploadsPath = ensureUploadsDirectory(fallbackUploadsPath);
   } catch (fallbackError) {
-    console.warn(`Unable to use fallback uploads directory ${fallbackUploadsPath}: ${fallbackError.message}. Falling back to ${tempUploadsPath}`);
+    console.warn(
+      `Unable to use fallback uploads directory ${fallbackUploadsPath}: ${fallbackError.message}. Falling back to ${tempUploadsPath}`,
+    );
     try {
       uploadsPath = ensureUploadsDirectory(tempUploadsPath);
     } catch (finalError) {
-      console.error(`Unable to create temp uploads directory ${tempUploadsPath}:`, finalError);
+      console.error(
+        `Unable to create temp uploads directory ${tempUploadsPath}:`,
+        finalError,
+      );
       throw finalError;
     }
   }
@@ -127,7 +136,7 @@ app.get("/health", (req, res) => {
   res.json({
     status: "ok",
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
+    uptime: process.uptime(),
   });
 });
 
@@ -173,7 +182,9 @@ const MAX_PORT = PORT + 20;
 
 const startListening = (serverCreator, port) =>
   new Promise((resolve, reject) => {
-    const server = serverCreator(port, "0.0.0.0", () => resolve({ server, port }));
+    const server = serverCreator(port, "0.0.0.0", () =>
+      resolve({ server, port }),
+    );
     server.on("error", reject);
   });
 
@@ -243,7 +254,9 @@ const startServer = async () => {
         logStartup("https", sslPort);
       } catch (err) {
         if (err.code === "EADDRINUSE") {
-          console.warn(`HTTPS port ${sslPort} is in use; aborting HTTPS startup`);
+          console.warn(
+            `HTTPS port ${sslPort} is in use; aborting HTTPS startup`,
+          );
         } else {
           throw err;
         }
@@ -261,11 +274,16 @@ const startServer = async () => {
           res.end();
         });
         try {
-          await startListening(redirectServer.listen.bind(redirectServer), PORT);
+          await startListening(
+            redirectServer.listen.bind(redirectServer),
+            PORT,
+          );
           console.log(`HTTP -> HTTPS redirect active on port ${PORT}`);
         } catch (err) {
           if (err.code === "EADDRINUSE") {
-            console.warn(`HTTP redirect port ${PORT} is in use; skipping redirect server`);
+            console.warn(
+              `HTTP redirect port ${PORT} is in use; skipping redirect server`,
+            );
           } else {
             throw err;
           }

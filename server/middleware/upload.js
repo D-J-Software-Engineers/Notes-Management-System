@@ -4,7 +4,9 @@ const { v4: uuidv4 } = require("uuid");
 const fs = require("fs");
 
 // Ensure uploads directory exists
-const uploadDir = path.resolve(process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"));
+const uploadDir = path.resolve(
+  process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"),
+);
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });

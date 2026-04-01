@@ -30,11 +30,13 @@ npm run service:install
 ```
 
 Or use the batch file:
+
 ```bash
 windows-service/install-service.bat
 ```
 
 What this does:
+
 - Creates a Windows Service named `NotesManagementServer`
 - Service runs on port 5000
 - Automatically starts on system boot
@@ -47,6 +49,7 @@ npm run service:status
 ```
 
 Expected output:
+
 ```
 ✓ Service "NotesManagementServer" is installed
 ```
@@ -54,6 +57,7 @@ Expected output:
 ### 1.4 Find Your Windows Server IP Address
 
 Open Command Prompt and run:
+
 ```bash
 ipconfig
 ```
@@ -61,6 +65,7 @@ ipconfig
 Look for your local network adapter (usually starts with 192.168.x.x or 10.x.x.x)
 
 **Example output:**
+
 ```
 Wireless LAN adapter WiFi:
    IPv4 Address. . . . . . . . . . : 192.168.1.100
@@ -72,6 +77,7 @@ Wireless LAN adapter WiFi:
 ### 1.5 Test Server Connectivity
 
 From another device on the same network, test:
+
 ```bash
 # Replace 192.168.1.100 with your actual server IP
 curl http://192.168.1.100:5000/health
@@ -91,6 +97,7 @@ Edit the Android app configuration files:
 **Option A: Via Environment File**
 
 Create or update `.env` in the project root:
+
 ```
 VITE_SERVER_IP=192.168.1.100
 VITE_SERVER_PORT=5000
@@ -100,9 +107,10 @@ VITE_SERVER_URL=http://192.168.1.100:5000
 **Option B: Direct Update in Code**
 
 Edit `client/public/assets/js/server-config.js`:
+
 ```javascript
 export const SERVER_CONFIG = {
-  BASE_URL: 'http://192.168.1.100:5000',  // Replace with your IP
+  BASE_URL: "http://192.168.1.100:5000", // Replace with your IP
   // ... rest of config
 };
 ```
@@ -110,6 +118,7 @@ export const SERVER_CONFIG = {
 ### 2.2 Update Capacitor Configuration
 
 Edit `capacitor.config.json`:
+
 ```json
 {
   "appId": "com.nsomadiglibs.app",
@@ -182,6 +191,7 @@ cd ..
 ```
 
 **Output location:**
+
 ```
 android/app/build/outputs/apk/release/app-release-unsigned.apk
 ```
@@ -256,6 +266,7 @@ npm run dev
 ### Issue: App Cannot Connect to Server
 
 **Solution:**
+
 1. Verify server is running: `npm run service:status`
 2. Test from Windows machine: `curl http://localhost:5000/health`
 3. Test from Android device on same WiFi: `http://[WINDOWS_IP]:5000/health`
@@ -265,6 +276,7 @@ npm run dev
 ### Issue: APK Build Fails
 
 **Solution:**
+
 ```bash
 # Clean build
 cd android
@@ -279,6 +291,7 @@ npx cap build android
 ### Issue: Cannot Find Android SDK
 
 **Solution:**
+
 ```bash
 # Set ANDROID_SDK_ROOT
 # On Windows PowerShell:
@@ -291,18 +304,19 @@ npx cap doctor android
 ### Issue: Service Won't Install (Permission Denied)
 
 **Solution:**
+
 - Run Command Prompt **as Administrator**
 - Use the batch file: `windows-service/install-service.bat`
 
 ## Service Management Commands
 
-| Command | Action |
-|---------|--------|
-| `npm run service:install` | Install and start the service |
-| `npm run service:start` | Start the service |
-| `npm run service:stop` | Stop the service |
-| `npm run service:uninstall` | Remove the service |
-| `npm run service:status` | Check if service is installed |
+| Command                     | Action                        |
+| --------------------------- | ----------------------------- |
+| `npm run service:install`   | Install and start the service |
+| `npm run service:start`     | Start the service             |
+| `npm run service:stop`      | Stop the service              |
+| `npm run service:uninstall` | Remove the service            |
+| `npm run service:status`    | Check if service is installed |
 
 ## Network Configuration Summary
 
@@ -360,6 +374,7 @@ npm run android:build
 ```
 
 This will:
+
 1. Build the web app
 2. Sync Capacitor
 3. Build Android debug APK

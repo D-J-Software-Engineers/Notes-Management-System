@@ -20,6 +20,7 @@ const seedDatabase = require("./utils/seedDatabase");
 // ... imports
 const fs = require("fs");
 const https = require("https");
+const os = require("os");
 
 const app = express();
 
@@ -81,7 +82,54 @@ app.use(
   }),
 );
 app.use("/pages", express.static(path.join(__dirname, "../client/pages")));
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+
+// Uploads path: prefer APP-defined path, else project folder.
+// If that is not writable, fall back to per-user local path, then temp path.
+let uploadsPath = path.resolve(process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"));
+const fallbackUploadsPath = path.resolve(
+  os.homedir(),
+  "AppData",
+  "Local",
+  "Nsoma-DigLibs",
+  "uploads",
+);
+const tempUploadsPath = path.resolve(os.tmpdir(), "Nsoma-DigLibs", "uploads");
+
+function ensureUploadsDirectory(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`Created uploads static directory: ${dir}`);
+  }
+  return dir;
+}
+
+try {
+  uploadsPath = ensureUploadsDirectory(uploadsPath);
+} catch (err) {
+  console.warn(`Unable to use uploads directory ${uploadsPath}: ${err.message}. Falling back to ${fallbackUploadsPath}`);
+  try {
+    uploadsPath = ensureUploadsDirectory(fallbackUploadsPath);
+  } catch (fallbackError) {
+    console.warn(`Unable to use fallback uploads directory ${fallbackUploadsPath}: ${fallbackError.message}. Falling back to ${tempUploadsPath}`);
+    try {
+      uploadsPath = ensureUploadsDirectory(tempUploadsPath);
+    } catch (finalError) {
+      console.error(`Unable to create temp uploads directory ${tempUploadsPath}:`, finalError);
+      throw finalError;
+    }
+  }
+}
+
+app.use("/uploads", express.static(uploadsPath));
+
+// Health check endpoint (no auth required) - for service verification
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Test endpoint
 app.get("/api/test", (req, res) => {
@@ -120,7 +168,30 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
+const MAX_PORT = PORT + 20;
+
+const startListening = (serverCreator, port) =>
+  new Promise((resolve, reject) => {
+    const server = serverCreator(port, "0.0.0.0", () => resolve({ server, port }));
+    server.on("error", reject);
+  });
+
+const findAvailablePort = async () => {
+  for (let currentPort = PORT; currentPort <= MAX_PORT; currentPort++) {
+    try {
+      const result = await startListening(app.listen.bind(app), currentPort);
+      return result;
+    } catch (err) {
+      if (err.code !== "EADDRINUSE") {
+        throw err;
+      }
+      console.warn(`Port ${currentPort} is in use, trying next port...`);
+    }
+  }
+  throw new Error(`No available ports between ${PORT} and ${MAX_PORT}`);
+};
+
 const startServer = async () => {
   try {
     await connectDB();
@@ -166,9 +237,17 @@ const startServer = async () => {
       const key = fs.readFileSync(sslKeyPath);
       const cert = fs.readFileSync(sslCertPath);
       const httpsServer = https.createServer({ key, cert }, app);
-      httpsServer.listen(sslPort, "0.0.0.0", () =>
-        logStartup("https", sslPort),
-      );
+
+      try {
+        await startListening(httpsServer.listen.bind(httpsServer), sslPort);
+        logStartup("https", sslPort);
+      } catch (err) {
+        if (err.code === "EADDRINUSE") {
+          console.warn(`HTTPS port ${sslPort} is in use; aborting HTTPS startup`);
+        } else {
+          throw err;
+        }
+      }
 
       if (redirectHttp) {
         // start an HTTP listener that redirects to HTTPS
@@ -181,18 +260,26 @@ const startServer = async () => {
           res.writeHead(301, { Location: target });
           res.end();
         });
-        redirectServer.listen(PORT, "0.0.0.0", () => {
+        try {
+          await startListening(redirectServer.listen.bind(redirectServer), PORT);
           console.log(`HTTP -> HTTPS redirect active on port ${PORT}`);
-        });
+        } catch (err) {
+          if (err.code === "EADDRINUSE") {
+            console.warn(`HTTP redirect port ${PORT} is in use; skipping redirect server`);
+          } else {
+            throw err;
+          }
+        }
       } else {
         // keep a normal HTTP server as well (non-redirecting)
-        app.listen(PORT, "0.0.0.0", () => {
-          console.log(`HTTP server also listening on port ${PORT}`);
-        });
+        const { port: httpPortUsed } = await findAvailablePort();
+        logStartup("http", httpPortUsed);
       }
     } else {
       // No valid SSL config: start plain HTTP only
-      app.listen(PORT, "0.0.0.0", () => logStartup("http", PORT));
+      const { port: httpPortUsed } = await findAvailablePort();
+      logStartup("http", httpPortUsed);
+
       if (
         (sslKeyPath || sslCertPath) &&
         !(fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath))

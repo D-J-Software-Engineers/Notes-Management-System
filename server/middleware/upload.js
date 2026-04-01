@@ -4,9 +4,17 @@ const { v4: uuidv4 } = require("uuid");
 const fs = require("fs");
 
 // Ensure uploads directory exists
-const uploadDir = "uploads/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = path.resolve(process.env.UPLOADS_PATH || path.join(__dirname, "../uploads"));
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log(`Upload directory created: ${uploadDir}`);
+  }
+} catch (err) {
+  console.error(`Unable to create upload directory ${uploadDir}:`, err);
+  if (err.code !== "EEXIST") {
+    throw new Error(`Failed to ensure upload directory exists: ${err.message}`);
+  }
 }
 
 const storage = multer.diskStorage({

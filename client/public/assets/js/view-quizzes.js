@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <div class="col-12 text-center py-5">
                     <div class="mb-3 fs-1">📚</div>
                     <h4 class="text-secondary">No quizzes available for you yet</h4>
-                    <p class="text-muted">Check back later or try a different search!</p>
+                    <p class="text-muted">Check back later or Try a different search!</p>
                 </div>`;
       return;
     }

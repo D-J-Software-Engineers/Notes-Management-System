@@ -76,15 +76,21 @@ exports.getSubjectsByLevel = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.createSubject = async (req, res, next) => {
   try {
-    const { name, code, level, isCompulsory, isSubsidiary, stream } = req.body;
+    const {
+      name,
+      code,
+      level,
+      isCompulsory,
+      isSubsidiary,
+      stream,
+    } = req.body;
 
-    // Define classes based on level
-    const classes =
-      level === "o-level" ? ["s1", "s2", "s3", "s4"] : ["s5", "s6"];
+    // Automatically apply to all classes in the selected level
+    const classList = level === "o-level" ? ["s1", "s2", "s3", "s4"] : ["s5", "s6"];
+
     const createdSubjects = [];
 
-    // Create a subject record for each class in the level
-    for (const classLevel of classes) {
+    for (const classLevel of classList) {
       const existing = await Subject.findOne({
         where: { name, level, class: classLevel },
       });
@@ -105,7 +111,7 @@ exports.createSubject = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Subject created successfully for all classes in " + level,
+      message: `Subject created successfully for all classes in ${level}`,
       data: createdSubjects,
     });
   } catch (error) {
@@ -126,7 +132,8 @@ exports.updateSubject = async (req, res, next) => {
 
     const { name, code, level, isCompulsory, isSubsidiary, stream } = req.body;
 
-    // Find all subjects in the current level with the same original name
+    // Find all subjects with the same name in the same level and update them
+    // This ensures updates propagate to all classes in the same level
     const originalName = subject.name;
     const subjectsToUpdate = await Subject.findAll({
       where: {
@@ -135,13 +142,9 @@ exports.updateSubject = async (req, res, next) => {
       },
     });
 
-    // We might be changing the level itself, meaning we might have to re-create for different classes or just update existing.
-    // For simplicity, we just update the properties of the existing records found.
-    // A robust system would delete old classes and create new ones if 'level' changes, but assuming level changes are rare.
     for (const sub of subjectsToUpdate) {
       if (name) sub.name = name;
       if (typeof code !== "undefined") sub.code = code;
-      if (level) sub.level = level; // Note: Doesn't auto-create S5/S6 if changing from O to A level
       if (typeof isCompulsory !== "undefined") sub.isCompulsory = isCompulsory;
       if (typeof isSubsidiary !== "undefined") sub.isSubsidiary = isSubsidiary;
       sub.stream = stream || null;
@@ -151,7 +154,7 @@ exports.updateSubject = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Subject updated successfully across all associated classes",
+      message: "Subject updated successfully for all classes in the same level",
       data: subject, // Return the originally requested subject
     });
   } catch (error) {
@@ -172,7 +175,7 @@ exports.deleteSubject = async (req, res, next) => {
 
     const { name, level } = subject;
 
-    // Delete all subjects with the same name and level
+    // Delete all subjects with the same name in the same level (all classes)
     const deletedCount = await Subject.destroy({
       where: {
         name,
@@ -182,7 +185,7 @@ exports.deleteSubject = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Subject deleted successfully across all associated classes (${deletedCount} records removed)`,
+      message: `Subject deleted successfully from all classes in the same level (${deletedCount} records removed)`,
     });
   } catch (error) {
     next(error);

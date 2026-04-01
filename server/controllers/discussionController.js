@@ -115,12 +115,10 @@ exports.addPublication = async (req, res, next) => {
 
     // Optionally strictly ensure that only the creator can add a publication
     if (discussion.createdById !== req.user.id) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Only the creator can add publications",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Only the creator can add publications",
+      });
     }
 
     discussion.publicationText = publicationText;

@@ -5,7 +5,8 @@ const os = require("os");
 
 // Set up paths for production (all-users shared DB on Windows)
 const isDev = !app.isPackaged;
-const programDataRoot = process.env.PROGRAMDATA || path.join(os.homedir(), "AppData", "Local");
+const programDataRoot =
+  process.env.PROGRAMDATA || path.join(os.homedir(), "AppData", "Local");
 const sharedDataPath = path.join(programDataRoot, "Nsoma-DigLibs");
 if (!fs.existsSync(sharedDataPath)) {
   fs.mkdirSync(sharedDataPath, { recursive: true });
@@ -15,7 +16,10 @@ const dbPath = path.join(sharedDataPath, "database.sqlite");
 // API server URL mode
 const defaultLocalServer = "http://localhost:5000";
 const serverUrl = process.env.APP_SERVER_URL || defaultLocalServer;
-const isRemoteServer = !serverUrl.startsWith("http://localhost") && !serverUrl.startsWith("http://127.0.0.1") && !serverUrl.startsWith("https://localhost");
+const isRemoteServer =
+  !serverUrl.startsWith("http://localhost") &&
+  !serverUrl.startsWith("http://127.0.0.1") &&
+  !serverUrl.startsWith("https://localhost");
 
 // Ensure database exists in writable location
 if (!fs.existsSync(dbPath)) {
@@ -45,7 +49,9 @@ try {
   console.log(`Created/verified userData uploads dir at ${userDataUploads}`);
   uploadsPath = userDataUploads;
 } catch (err) {
-  console.warn(`Unable to create userData uploads dir: ${err.message}. Falling back to temp directory.`);
+  console.warn(
+    `Unable to create userData uploads dir: ${err.message}. Falling back to temp directory.`,
+  );
   const tempUploads = path.join(os.tmpdir(), "Nsoma-DigLibs", "uploads");
   fs.mkdirSync(tempUploads, { recursive: true });
   console.log(`Created/verified temp uploads dir at ${tempUploads}`);

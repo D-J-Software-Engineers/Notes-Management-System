@@ -76,17 +76,11 @@ exports.getSubjectsByLevel = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.createSubject = async (req, res, next) => {
   try {
-    const {
-      name,
-      code,
-      level,
-      isCompulsory,
-      isSubsidiary,
-      stream,
-    } = req.body;
+    const { name, code, level, isCompulsory, isSubsidiary, stream } = req.body;
 
     // Automatically apply to all classes in the selected level
-    const classList = level === "o-level" ? ["s1", "s2", "s3", "s4"] : ["s5", "s6"];
+    const classList =
+      level === "o-level" ? ["s1", "s2", "s3", "s4"] : ["s5", "s6"];
 
     const createdSubjects = [];
 

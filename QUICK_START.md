@@ -46,12 +46,14 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 ## 📋 What Was Set Up
 
 ### Windows Service (Runs Always)
+
 - ✅ Node.js server as Windows Service
 - ✅ Automatically starts on system boot
 - ✅ Runs independently of any GUI
 - ✅ Accessible at `http://192.168.1.100:5000` (or your IP)
 
 ### Android App Features
+
 - ✅ Connects to Windows server via local network
 - ✅ Works offline (cached data)
 - ✅ Auto-discovers server on LAN
@@ -59,6 +61,7 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 - ✅ Production-ready permissions
 
 ### Data Access
+
 - ✅ Database (SQLite)
 - ✅ File uploads/downloads
 - ✅ REST API endpoints
@@ -68,24 +71,26 @@ adb install android/app/build/outputs/apk/debug/app-debug.apk
 
 ## 🔧 Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| **"Service won't install"** | Run Command Prompt as Administrator |
-| **"App can't find server"** | Check server IP with `ipconfig` and update config |
-| **"APK build fails"** | Run `npm install` and `npx cap doctor android` |
-| **"Permission denied on Windows"** | Right-click terminal, select "Run as Administrator" |
-| **"Connection timeout on Android"** | Verify both device and server are on same WiFi |
+| Problem                             | Solution                                            |
+| ----------------------------------- | --------------------------------------------------- |
+| **"Service won't install"**         | Run Command Prompt as Administrator                 |
+| **"App can't find server"**         | Check server IP with `ipconfig` and update config   |
+| **"APK build fails"**               | Run `npm install` and `npx cap doctor android`      |
+| **"Permission denied on Windows"**  | Right-click terminal, select "Run as Administrator" |
+| **"Connection timeout on Android"** | Verify both device and server are on same WiFi      |
 
 ---
 
 ## 📱 Testing the Connection
 
 ### From Android App:
+
 1. Launch the app
 2. You should see data loading (if server is running)
 3. Go to app settings and verify server IP is correct
 
 ### From Windows Command Line:
+
 ```powershell
 # Test server is running
 curl http://192.168.1.100:5000/health
@@ -94,6 +99,7 @@ curl http://192.168.1.100:5000/health
 ```
 
 ### From Another Computer:
+
 ```bash
 # Test server accessibility from another machine
 curl http://192.168.1.100:5000/health
@@ -103,13 +109,13 @@ curl http://192.168.1.100:5000/health
 
 ## 📂 Key Files Created
 
-| File | Purpose |
-|------|---------|
-| `windows-service/service-manager.js` | Windows service control |
-| `configure-android.js` | Auto-configure Android app |
-| `build-android.bat` | One-click APK builder |
-| `client/public/assets/js/network-manager.js` | Android network utilities |
-| `BUILD_ANDROID_APK.md` | Detailed build instructions |
+| File                                         | Purpose                     |
+| -------------------------------------------- | --------------------------- |
+| `windows-service/service-manager.js`         | Windows service control     |
+| `configure-android.js`                       | Auto-configure Android app  |
+| `build-android.bat`                          | One-click APK builder       |
+| `client/public/assets/js/network-manager.js` | Android network utilities   |
+| `BUILD_ANDROID_APK.md`                       | Detailed build instructions |
 
 ---
 
@@ -144,11 +150,13 @@ curl http://192.168.1.100:5000/health
 ## 🔐 Security Notes
 
 ✅ **Good for:**
+
 - Local network (LAN) usage
 - School/office environments
 - Private networks
 
 ⚠️ **For Public/Internet Access:**
+
 - Use HTTPS (SSL/TLS)
 - Set up proper domain name
 - Add authentication headers
@@ -160,21 +168,25 @@ curl http://192.168.1.100:5000/health
 ## 🚦 Service Management
 
 ### Check Service Status
+
 ```powershell
 npm run service:status
 ```
 
 ### Stop Service
+
 ```powershell
 npm run service:stop
 ```
 
 ### Start Service
+
 ```powershell
 npm run service:start
 ```
 
 ### Uninstall Service
+
 ```powershell
 npm run service:uninstall
 ```

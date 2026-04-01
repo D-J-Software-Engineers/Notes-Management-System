@@ -82,7 +82,7 @@ Run the app as a standalone Windows executable (no browser needed):
 
 ```bash
 install node
-run npm install 
+run npm install
 # Run in Electron during development
 
 npm run electron:start

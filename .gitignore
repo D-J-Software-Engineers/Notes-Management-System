@@ -40,6 +40,11 @@ android/app/src/main/res/drawable-*
 android/app/src/main/res/mipmap-*
 android/app/src/main/res/values/ic_launcher_background.xml
 
+# Executables and build files
+*.apk
+*.aab
+*.exe
+
 # Local development assets and specific client pages
 assets/
 client/public/pages/

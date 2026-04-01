@@ -3,38 +3,41 @@
 /**
  * Android App Configuration Helper
  * Automatically finds Windows server and updates Android config
- * 
+ *
  * Usage: node configure-android.js [--ip 192.168.1.100]
  */
 
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
-const { promisify } = require('util');
+const fs = require("fs");
+const path = require("path");
+const { exec } = require("child_process");
+const { promisify } = require("util");
 
 const execAsync = promisify(exec);
 
 class AndroidConfigurator {
   constructor() {
     this.serverIp = process.argv
-      .find(arg => arg.startsWith('--ip'))
-      ?.split('=')[1];
-    
+      .find((arg) => arg.startsWith("--ip"))
+      ?.split("=")[1];
+
     this.configFiles = {
-      capacitor: path.join(__dirname, '../capacitor.config.json'),
-      serverConfig: path.join(__dirname, '../client/public/assets/js/server-config.js'),
-      buildGradle: path.join(__dirname, '../android/app/build.gradle')
+      capacitor: path.join(__dirname, "../capacitor.config.json"),
+      serverConfig: path.join(
+        __dirname,
+        "../client/public/assets/js/server-config.js",
+      ),
+      buildGradle: path.join(__dirname, "../android/app/build.gradle"),
     };
   }
 
   async findWindowsServer() {
-    console.log('\n🔍 Scanning for Windows server on local network...\n');
+    console.log("\n🔍 Scanning for Windows server on local network...\n");
 
     const commonRanges = [
-      { range: '192.168.1', name: 'Standard Private' },
-      { range: '192.168.0', name: 'Standard Private Alt' },
-      { range: '10.0.0', name: 'Class A Private' },
-      { range: '172.16', name: 'Class B Private' }
+      { range: "192.168.1", name: "Standard Private" },
+      { range: "192.168.0", name: "Standard Private Alt" },
+      { range: "10.0.0", name: "Class A Private" },
+      { range: "172.16", name: "Class B Private" },
     ];
 
     for (const { range, name } of commonRanges) {
@@ -45,10 +48,10 @@ class AndroidConfigurator {
         try {
           const { stdout } = await execAsync(
             `curl -s --connect-timeout 1 http://${ip}:5000/health`,
-            { timeout: 2000 }
+            { timeout: 2000 },
           );
 
-          if (stdout.includes('ok')) {
+          if (stdout.includes("ok")) {
             console.log(`\n✅ Found server at ${ip}!\n`);
             return ip;
           }
@@ -62,11 +65,11 @@ class AndroidConfigurator {
   }
 
   getLocalIp() {
-    console.log('\n📱 Detecting your local network IP...\n');
+    console.log("\n📱 Detecting your local network IP...\n");
 
     try {
-      const { stdout } = require('child_process').execSync('ipconfig', {
-        encoding: 'utf-8'
+      const { stdout } = require("child_process").execSync("ipconfig", {
+        encoding: "utf-8",
       });
 
       const ipMatch = stdout.match(/IPv4 Address[.\s]+: (\d+\.\d+\.\d+\.\d+)/);
@@ -76,7 +79,7 @@ class AndroidConfigurator {
         return ip;
       }
     } catch (error) {
-      console.error('Could not detect local IP');
+      console.error("Could not detect local IP");
     }
 
     return null;
@@ -86,13 +89,15 @@ class AndroidConfigurator {
     console.log(`📝 Updating capacitor.config.json...`);
 
     try {
-      const config = JSON.parse(fs.readFileSync(this.configFiles.capacitor, 'utf-8'));
+      const config = JSON.parse(
+        fs.readFileSync(this.configFiles.capacitor, "utf-8"),
+      );
       config.server = config.server || {};
       config.server.hostname = ip;
 
       fs.writeFileSync(
         this.configFiles.capacitor,
-        JSON.stringify(config, null, 2)
+        JSON.stringify(config, null, 2),
       );
 
       console.log(`✅ Updated with server IP: ${ip}\n`);
@@ -105,12 +110,12 @@ class AndroidConfigurator {
     console.log(`📝 Updating server-config.js...`);
 
     try {
-      let config = fs.readFileSync(this.configFiles.serverConfig, 'utf-8');
+      let config = fs.readFileSync(this.configFiles.serverConfig, "utf-8");
 
       // Replace the IP address
       config = config.replace(
         /BASE_URL: 'http:\/\/[^']+:5000'/,
-        `BASE_URL: 'http://${ip}:5000'`
+        `BASE_URL: 'http://${ip}:5000'`,
       );
 
       fs.writeFileSync(this.configFiles.serverConfig, config);
@@ -123,8 +128,8 @@ class AndroidConfigurator {
   createServerBuildFile(ip) {
     console.log(`📝 Creating build configuration...`);
 
-    const buildDir = path.join(__dirname, '../android/app/src/main/assets');
-    const configFile = path.join(buildDir, 'server-config.json');
+    const buildDir = path.join(__dirname, "../android/app/src/main/assets");
+    const configFile = path.join(buildDir, "server-config.json");
 
     try {
       if (!fs.existsSync(buildDir)) {
@@ -134,7 +139,7 @@ class AndroidConfigurator {
       const config = {
         serverIp: ip,
         serverPort: 5000,
-        serverUrl: `http://${ip}:5000`
+        serverUrl: `http://${ip}:5000`,
       };
 
       fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
@@ -159,9 +164,9 @@ class AndroidConfigurator {
       serverIp = await this.findWindowsServer();
 
       if (!serverIp) {
-        console.log('\n⚠️  Could not find server automatically.\n');
-        console.log('Please provide the Windows server IP manually:');
-        console.log('Usage: node configure-android.js --ip=192.168.1.100\n');
+        console.log("\n⚠️  Could not find server automatically.\n");
+        console.log("Please provide the Windows server IP manually:");
+        console.log("Usage: node configure-android.js --ip=192.168.1.100\n");
 
         // Get local IP for reference
         this.getLocalIp();
@@ -169,7 +174,9 @@ class AndroidConfigurator {
       }
     }
 
-    console.log(`\n🔧 Configuring Android app to connect to: http://${serverIp}:5000\n`);
+    console.log(
+      `\n🔧 Configuring Android app to connect to: http://${serverIp}:5000\n`,
+    );
 
     // Update all configuration files
     this.updateCapacitorConfig(serverIp);

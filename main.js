@@ -1,11 +1,21 @@
 const { app, BrowserWindow, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const os = require("os");
 
-// Set up paths for production
+// Set up paths for production (all-users shared DB on Windows)
 const isDev = !app.isPackaged;
-const userDataPath = app.getPath("userData");
-const dbPath = path.join(userDataPath, "database.sqlite");
+const programDataRoot = process.env.PROGRAMDATA || path.join(os.homedir(), "AppData", "Local");
+const sharedDataPath = path.join(programDataRoot, "Nsoma-DigLibs");
+if (!fs.existsSync(sharedDataPath)) {
+  fs.mkdirSync(sharedDataPath, { recursive: true });
+}
+const dbPath = path.join(sharedDataPath, "database.sqlite");
+
+// API server URL mode
+const defaultLocalServer = "http://localhost:5000";
+const serverUrl = process.env.APP_SERVER_URL || defaultLocalServer;
+const isRemoteServer = !serverUrl.startsWith("http://localhost") && !serverUrl.startsWith("http://127.0.0.1") && !serverUrl.startsWith("https://localhost");
 
 // Ensure database exists in writable location
 if (!fs.existsSync(dbPath)) {
@@ -13,7 +23,7 @@ if (!fs.existsSync(dbPath)) {
   if (fs.existsSync(templatePath)) {
     try {
       fs.copyFileSync(templatePath, dbPath);
-      console.log("Database copied successfully");
+      console.log("Database copied successfully to shared path");
     } catch (e) {
       console.error("Failed to copy database template", e);
     }
@@ -26,6 +36,22 @@ if (!fs.existsSync(dbPath)) {
 process.env.DATABASE_STORAGE = dbPath;
 process.env.NODE_ENV = isDev ? "development" : "production";
 process.env.PORT = "5000";
+
+// For packaged app, ensure uploads are placed in user-writable path.
+let uploadsPath;
+try {
+  const userDataUploads = path.join(app.getPath("userData"), "uploads");
+  fs.mkdirSync(userDataUploads, { recursive: true });
+  console.log(`Created/verified userData uploads dir at ${userDataUploads}`);
+  uploadsPath = userDataUploads;
+} catch (err) {
+  console.warn(`Unable to create userData uploads dir: ${err.message}. Falling back to temp directory.`);
+  const tempUploads = path.join(os.tmpdir(), "Nsoma-DigLibs", "uploads");
+  fs.mkdirSync(tempUploads, { recursive: true });
+  console.log(`Created/verified temp uploads dir at ${tempUploads}`);
+  uploadsPath = tempUploads;
+}
+process.env.UPLOADS_PATH = uploadsPath;
 
 let mainWindow;
 
@@ -49,7 +75,7 @@ function createWindow() {
     ),
   });
 
-  mainWindow.loadURL("http://localhost:5000");
+  mainWindow.loadURL(serverUrl);
 
   mainWindow.on("closed", function () {
     mainWindow = null;
@@ -86,13 +112,19 @@ async function startServer() {
 }
 
 app.on("ready", async () => {
-  console.log("App ready");
-  await startServer();
-  // Wait a bit for server to start
-  setTimeout(() => {
-    console.log("Creating window after delay");
+  console.log("App ready, serverUrl=%s", serverUrl);
+
+  if (!isRemoteServer) {
+    await startServer();
+    // Wait for local server to start
+    setTimeout(() => {
+      console.log("Creating window after delay for local server");
+      createWindow();
+    }, 2000);
+  } else {
+    console.log("Remote server mode, skipping local server startup");
     createWindow();
-  }, 2000);
+  }
 });
 
 app.on("window-all-closed", function () {

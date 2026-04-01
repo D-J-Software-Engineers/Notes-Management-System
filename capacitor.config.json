@@ -3,6 +3,13 @@
   "appName": "Nsoma-DigLibs",
   "webDir": "client/public",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "cleartext": "[\"192.168.*\", \"10.*\", \"172.16.*\"]"
+  },
+  "plugins": {
+    "CapacitorHTTP": {
+      "enabled": true
+    }
   }
 }
+

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Upload Quiz - Nsoma DigLibs</title>
+    <title>Upload Activity/Quiz - Nsoma DigLibs</title>
     <!-- Custom CSS (same as other admin pages) -->
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link rel="stylesheet" href="../assets/css/admin.css" />
@@ -18,7 +18,7 @@
     <div id="uploadApp" class="admin-upload-page">
       <header class="admin-nav">
         <div class="nav-container">
-          <h1 class="nav-logo">Admin - Upload Quiz</h1>
+          <h1 class="nav-logo">Admin - Upload Activity/Quiz</h1>
           <div class="nav-user">
             <span id="adminName">Admin</span>
             <button class="btn-logout" id="logoutBtn">Logout</button>
@@ -28,7 +28,7 @@
 
       <main class="admin-main">
         <section class="upload-section">
-          <h2>Upload or Create Quiz</h2>
+          <h2>Upload or Create Activity/ Quiz</h2>
           <p class="subtitle">
             Fill in the details and optionally upload a file or type the
             questions directly.
@@ -36,7 +36,7 @@
 
           <form id="uploadQuizForm">
             <div class="form-group">
-              <label for="title">Quiz Title *</label>
+              <label for="title">Activity/Quiz Title *</label>
               <input type="text" id="title" required />
             </div>
 
@@ -97,12 +97,12 @@
             </div>
 
             <div class="form-group" id="fileUploadSection">
-              <label for="file">Quiz File</label>
+              <label for="file">Activity/Quiz File</label>
               <input type="file" id="file" accept=".pdf,.doc,.docx" />
             </div>
 
             <div class="form-group" id="plainTextSection" style="display: none">
-              <label for="content">Quiz Questions</label>
+              <label for="content">Activity/Quiz Questions</label>
               <textarea id="content" rows="10"></textarea>
             </div>
 
@@ -110,7 +110,7 @@
               <button type="button" class="btn-secondary" id="backBtn">
                 Back to Dashboard
               </button>
-              <button type="submit" class="btn-primary">Create Quiz</button>
+              <button type="submit" class="btn-primary">Create Activity/Quiz</button>
             </div>
           </form>
         </section>

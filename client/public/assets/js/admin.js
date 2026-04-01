@@ -91,7 +91,7 @@ function renderApp() {
                     <li><a href="#" class="sidebar-link" data-tab="students">👥 Students</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="subjects">📖 Subjects</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="quizzes">❓ Quizzes</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="quizzes">❓ Activity/Quizzes</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="streams">📁 Streams</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="reset-requests">🔑 Reset Requests</a></li>
@@ -308,7 +308,7 @@ function renderDashboard() {
                     <p class="stat-number" id="totalNotes">0</p>
                 </div>
                 <div class="stat-card">
-                    <h3>Total Quizzes</h3>
+                    <h3>Total Activities & Quizzes</h3>
                     <p class="stat-number" id="totalQuizzes">0</p>
                 </div>
                 <div class="stat-card">
@@ -1235,8 +1235,8 @@ function renderQuizzesTab() {
   return `
         <div id="quizzes" class="tab-content">
             <div class="section-header">
-                <h2>Quiz Management</h2>
-                <button class="btn-primary" id="addQuizBtn">+ Create Quiz</button>
+                <h2>Activity/Quiz Management</h2>
+                <button class="btn-primary" id="addQuizBtn">+ Create Activity/Quiz</button>
             </div>
             <div class="filters">
                 <select id="quizLevelFilter">
@@ -1341,7 +1341,7 @@ function displayQuizzes(quizzes) {
 }
 
 function showAddQuizModal() {
-  showQuizModal("Create Quiz", null);
+  showQuizModal("Create Activity/Quiz", null);
 }
 
 function editQuiz(id) {

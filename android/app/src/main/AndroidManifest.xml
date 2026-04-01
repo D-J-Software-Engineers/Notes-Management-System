@@ -37,5 +37,15 @@
 
     <!-- Permissions -->
 
+    <!-- Required for network communication -->
     <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Required for accessing local network (Android 12+) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- Required for LAN access (Android 13+) -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    
+    <!-- Optional: For better network detection -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 </manifest>

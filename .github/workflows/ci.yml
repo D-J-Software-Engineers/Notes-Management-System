@@ -19,6 +19,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Check for checked-in executables (Android/Windows builds)
+      - name: Check for executable files
+        run: |
+          EXECUTABLES=$(find . -type f \( -name "*.apk" -o -name "*.exe" -o -name "*.aab" \) -not -path "*/node_modules/*")
+          if [ -n "$EXECUTABLES" ]; then
+            echo "❌ Error: Executable files (*.apk, *.exe) found in the repository."
+            echo "$EXECUTABLES"
+            echo "Please remove them and ensure they are ignored."
+            exit 1
+          fi
+          echo "✅ No executable files found in the repository"
+
       # 2. Setup Node.js
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

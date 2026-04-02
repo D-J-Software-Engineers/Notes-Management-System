@@ -1,14 +1,17 @@
 // ============================================
 // SEARCHROOM CONTROLLER
 // AI-powered academic research assistant
-// Powered by Google Gemini 1.5 Flash (free tier)
+// Powered by Google Gemini (free tier)
 // ============================================
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai");
 
-// Rate limiting: track per-user request counts
+// ---------------------------------------------------------------------------
+// In-memory rate limiter: max 10 requests per user per minute
+// ---------------------------------------------------------------------------
 const rateLimitMap = new Map();
-const RATE_LIMIT_MAX = 10; // max requests per window
+const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
 function checkRateLimit(userId) {
@@ -28,9 +31,51 @@ function checkRateLimit(userId) {
   return true;
 }
 
-// @desc    Query the AI research assistant
-// @route   POST /api/searchroom/query
-// @access  Private (students)
+// ---------------------------------------------------------------------------
+// Configured Models
+// ---------------------------------------------------------------------------
+const OPENAI_MODEL = "gpt-4o-mini";
+const GEMINI_MODELS = [
+  "gemini-2.0-flash",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-1.5-flash",
+  "gemini-pro-latest",
+];
+
+// ---------------------------------------------------------------------------
+// Build the system prompt from the authenticated student's profile
+// ---------------------------------------------------------------------------
+function buildPrompt(user, message) {
+  const level = user.level || "secondary school";
+  const className = user.class ? `class ${user.class.toUpperCase()}` : "";
+  const combination = user.combination || "";
+
+  return `You are Searchroom, an academic research assistant for a Ugandan secondary school student following the UNEB curriculum.
+
+Student profile:
+- Level: ${level}${className ? ` (${className})` : ""}
+${combination ? `- Subjects / Combination: ${combination}` : ""}
+
+Your responsibilities:
+- Explain academic concepts clearly and at the appropriate level for the student
+- Help with research, understanding topics, and exam preparation
+- Cover science, literature, history, mathematics, and all other academic subjects
+- Encourage curiosity and deeper thinking
+- Keep answers accurate, concise, and easy to understand
+
+Strict rules:
+- Never write essays, assignments, or coursework on behalf of the student
+- Never assist with academic dishonesty of any kind
+- If a question is off-topic or inappropriate, politely redirect to academic topics
+
+Student's question:
+${message.trim()}`;
+}
+
+/**
+ * Strategy: OpenAI (Primary if key exists) -> Gemini (Secondary fallback)
+ */
 exports.query = async (req, res, next) => {
   try {
     const { message } = req.body;
@@ -41,83 +86,109 @@ exports.query = async (req, res, next) => {
         .json({ success: false, message: "Please provide a research query." });
     }
 
-    if (message.trim().length > 1000) {
-      return res.status(400).json({
-        success: false,
-        message: "Query is too long. Please keep it under 1000 characters.",
-      });
-    }
-
-    // Rate limit check
     if (!checkRateLimit(req.user.id)) {
-      return res.status(429).json({
-        success: false,
-        message:
-          "Too many requests. Please wait a moment before asking another question.",
-      });
+      return res
+        .status(429)
+        .json({
+          success: false,
+          message: "Too many requests. Please wait a moment.",
+        });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(503).json({
-        success: false,
-        message:
-          "AI research assistant is not configured. Please contact the administrator.",
-      });
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+
+    console.log(
+      `[Searchroom] Keys detected - OpenAI: ${!!openaiKey}, Gemini: ${!!geminiKey}`,
+    );
+
+    if (!openaiKey && !geminiKey) {
+      return res
+        .status(503)
+        .json({ success: false, message: "AI assistant is not configured." });
     }
 
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = buildPrompt(req.user, message);
+    let reply = "";
+    let provider = "";
 
-    // Build an academic context from the student's profile
-    const userLevel = req.user.level || "secondary school";
-    const userClass = req.user.class
-      ? `class ${req.user.class.toUpperCase()}`
-      : "";
-    const userCombination = req.user.combination || "";
+    // --- 1. Try OpenAI (Primary) ---
+    if (openaiKey) {
+      try {
+        console.log(`[Searchroom] Attempting OpenAI (${OPENAI_MODEL})...`);
+        const openai = new OpenAI({ apiKey: openaiKey });
+        const completion = await openai.chat.completions.create({
+          model: OPENAI_MODEL,
+          messages: [{ role: "system", content: prompt }],
+        });
+        reply = completion.choices[0].message.content;
+        provider = "openai";
+      } catch (err) {
+        if (err.status === 401) {
+          console.error(
+            "[Searchroom] OpenAI Error: 401 Unauthorized. CHECK YOUR API KEY.",
+          );
+        } else {
+          console.warn(`[Searchroom] OpenAI failed: ${err.message}`);
+        }
+        // If Gemini is available, we fall through. Otherwise, throw.
+        if (!geminiKey) throw err;
+      }
+    }
 
-    const systemContext = `You are Searchroom, an academic research assistant for a Rwandan secondary school student.
-Student profile:
-- Level: ${userLevel}${userClass ? ` (${userClass})` : ""}
-${userCombination ? `- Combination/Subjects: ${userCombination}` : ""}
+    // --- 2. Try Gemini (Fallback) ---
+    if (!reply && geminiKey) {
+      const genAI = new GoogleGenerativeAI(geminiKey, { apiVersion: "v1beta" });
 
-Your role:
-- Help students understand academic concepts, research topics, and study materials
-- Provide clear, curriculum-appropriate explanations tailored to their level
-- Encourage critical thinking and deeper learning
-- Keep answers educational, accurate, and concise
-- You may explain scientific, literary, historical, mathematical, or any academic topics
-- Do NOT assist with completing assessments, writing essays for students, or anything academic dishonest
-- If a question is off-topic or inappropriate, politely redirect to academic topics
+      for (const modelName of GEMINI_MODELS) {
+        try {
+          console.log(`[Searchroom] Attempting Gemini (${modelName})...`);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          reply = result.response.text();
+          provider = `gemini (${modelName})`;
+          break;
+        } catch (err) {
+          console.warn(
+            `[Searchroom] Gemini ${modelName} failed: ${err.message}`,
+          );
+          // Continue to next model if it's a 404
+          const is404 =
+            err.message.includes("404") ||
+            err.message.toLowerCase().includes("not found");
+          const is429 =
+            err.message.includes("429") ||
+            err.message.toLowerCase().includes("too many requests");
 
-Student's question: ${message.trim()}`;
+          if (is429) {
+            console.error(
+              `[Searchroom] Gemini ${modelName} Quota Exceeded (429).`,
+            );
+          }
 
-    const result = await model.generateContent(systemContext);
-    const response = result.response;
-    const text = response.text();
+          if (!is404 && !is429) break;
+        }
+      }
+    }
 
-    res.status(200).json({
+    if (!reply) {
+      throw new Error("All AI providers failed to respond.");
+    }
+
+    return res.status(200).json({
       success: true,
       data: {
-        reply: text,
+        reply,
         query: message.trim(),
+        provider,
       },
     });
   } catch (error) {
-    // Handle Gemini API-specific errors gracefully
-    if (error.message && error.message.includes("API_KEY_INVALID")) {
-      return res.status(503).json({
-        success: false,
-        message:
-          "AI service configuration error. Please contact the administrator.",
-      });
-    }
-    if (error.message && error.message.includes("quota")) {
-      return res.status(503).json({
-        success: false,
-        message:
-          "AI research assistant is temporarily busy. Please try again shortly.",
-      });
-    }
-    next(error);
+    console.error("[Searchroom] Fatal error:", error.message);
+    res.status(503).json({
+      success: false,
+      message:
+        "The AI service is temporarily unavailable. Please try again later.",
+    });
   }
 };

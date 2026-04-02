@@ -1,503 +1,699 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Dashboard - Notes Management System</title>
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+    <link rel="stylesheet" href="/assets/css/student.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Dashboard - Notes Management System</title>
-  <link rel="stylesheet" href="/assets/css/styles.css" />
-  <link rel="stylesheet" href="/assets/css/student.css" />
-</head>
+  <body>
+    <!-- Top navigation styled by student.css -->
+    <nav class="student-nav">
+      <div class="nav-container">
+        <h1 class="nav-logo">📚 Notes Management System</h1>
+        <div class="nav-user">
+          <span id="studentNameNav">Student</span>
+          <button class="btn-logout" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+    </nav>
 
-<body>
-  <!-- Top navigation styled by student.css -->
-  <nav class="student-nav">
-    <div class="nav-container">
-      <h1 class="nav-logo">📚 Notes Management System</h1>
-      <div class="nav-user">
-        <span id="studentNameNav">Student</span>
-        <button class="btn-logout" id="logoutBtn">Logout</button>
+    <div class="student-container">
+      <!-- Sidebar -->
+      <aside class="student-sidebar">
+        <ul class="sidebar-menu">
+          <li>
+            <a href="#" class="sidebar-link active" data-tab="dashboard"
+              >🏠 Dashboard</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="quizzes"
+              >❓ Activities & Quizzes</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="resources"
+              >🔗 Resources</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="discussions"
+              >🗣️ Discussions</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="searchroom"
+              >🔬 Searchroom</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
+          </li>
+        </ul>
+      </aside>
+
+      <!-- Main content -->
+      <main class="student-main" id="studentMain">
+        <!-- Dashboard tab -->
+        <section id="dashboardTab" class="tab-content">
+          <div class="student-info-card">
+            <h3>Your Status</h3>
+            <div class="info-grid">
+              <div class="info-item">
+                <strong>Name:</strong>
+                <div id="studentName">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Level:</strong>
+                <div id="studentLevel">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Class:</strong>
+                <div id="studentClass">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Combination:</strong>
+                <div id="studentCombination">-</div>
+              </div>
+              <div class="info-item">
+                <strong>Account Status:</strong>
+                <div id="studentStatus">-</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <h3>Available Notes</h3>
+              <p class="stat-number" id="notesCount">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Available Activities & Quizzes</h3>
+              <p class="stat-number" id="quizzesCount">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Learning Resources</h3>
+              <p class="stat-number" id="resourcesCount">0</p>
+            </div>
+            <div class="stat-card">
+              <h3>Discussions & Seminars</h3>
+              <p class="stat-number" id="discussionsCount">0</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Notes tab -->
+        <section id="notesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Your Class Notes</h2>
+            <div class="filters">
+              <input
+                type="text"
+                id="notesSearch"
+                placeholder="Search notes by title or subject..."
+              />
+            </div>
+          </div>
+          <div id="notesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Quizzes tab -->
+        <section id="quizzesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Activities & Quizzes</h2>
+            <div class="filters">
+              <input
+                type="text"
+                id="quizzesSearch"
+                placeholder="Search activities & quizzes..."
+              />
+            </div>
+          </div>
+          <div id="quizzesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Resources tab -->
+        <section id="resourcesTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Extra Resources</h2>
+          </div>
+          <div id="resourcesContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Discussions tab -->
+        <section id="discussionsTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Discussions & Seminars</h2>
+            <div class="filters">
+              <button class="btn-primary" id="openProposeDiscussionBtn">
+                + Propose Discussion
+              </button>
+            </div>
+          </div>
+          <div id="discussionsContainer" class="notes-grid"></div>
+        </section>
+
+        <!-- Profile tab -->
+        <section id="profileTab" class="tab-content" style="display: none">
+          <div class="profile-card">
+            <div class="profile-info">
+              <h3>Your Profile</h3>
+              <p><strong>Name:</strong> <span id="profileName">-</span></p>
+              <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
+              <p><strong>Level:</strong> <span id="profileLevel">-</span></p>
+              <p><strong>Class:</strong> <span id="profileClass">-</span></p>
+              <p>
+                <strong>Combination:</strong>
+                <span id="profileCombination">-</span>
+              </p>
+              <p>
+                <strong>Status:</strong>
+                <span id="profileStatus">-</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Searchroom tab -->
+        <section id="searchroomTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>🔬 Searchroom AI Research</h2>
+          </div>
+          <div class="searchroom-container">
+            <div class="chat-header">
+              <h3>Academic Assistant</h3>
+              <button
+                class="btn-sm btn-logout"
+                id="clearChatBtn"
+                style="
+                  background: rgba(255, 255, 255, 0.1);
+                  border: 1px solid rgba(255, 255, 255, 0.2);
+                "
+              >
+                Clear Session
+              </button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message ai">
+                Hello! I'm your Searchroom academic assistant. Ask me any
+                research questions related to your studies, and I'll help you
+                understand the concepts!
+              </div>
+            </div>
+            <div
+              id="typingIndicator"
+              class="typing-indicator"
+              style="padding: 0 1.5rem 0.5rem 1.5rem; background: #f8f9fb"
+            >
+              AI is thinking...
+            </div>
+            <form class="chat-input-area" id="chatForm">
+              <input
+                type="text"
+                id="chatInput"
+                placeholder="Ask a research question (e.g. 'Explain the laws of thermodynamics')..."
+                autocomplete="off"
+                required
+              />
+              <button type="submit" class="btn-send">📤</button>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Native Modals -->
+    <div
+      id="discussionModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 30px;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+          position: relative;
+        "
+      >
+        <button
+          id="closeDiscussionModal"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+          "
+        >
+          &times;
+        </button>
+        <h3 style="margin-top: 0">Propose a Discussion/Seminar</h3>
+        <form id="createDiscussionFormNative" style="margin-top: 20px">
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Title</label
+            >
+            <input
+              type="text"
+              id="discTitle"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              required
+            />
+          </div>
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Description</label
+            >
+            <textarea
+              id="discDesc"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Meeting Link</label
+            >
+            <input
+              type="url"
+              id="discLink"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              placeholder="https://zoom.us/j/..."
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%; margin-top: 10px"
+          >
+            Submit Proposal
+          </button>
+        </form>
       </div>
     </div>
-  </nav>
 
-  <div class="student-container">
-    <!-- Sidebar -->
-    <aside class="student-sidebar">
-      <ul class="sidebar-menu">
-        <li>
-          <a href="#" class="sidebar-link active" data-tab="dashboard">🏠 Dashboard</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="quizzes">❓ Activities & Quizzes</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="discussions">🗣️ Discussions</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="searchroom">🔬 Searchroom</a>
-        </li>
-        <li>
-          <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
-        </li>
-      </ul>
-    </aside>
-
-    <!-- Main content -->
-    <main class="student-main" id="studentMain">
-      <!-- Dashboard tab -->
-      <section id="dashboardTab" class="tab-content">
-        <div class="student-info-card">
-          <h3>Your Status</h3>
-          <div class="info-grid">
-            <div class="info-item">
-              <strong>Name:</strong>
-              <div id="studentName">-</div>
-            </div>
-            <div class="info-item">
-              <strong>Level:</strong>
-              <div id="studentLevel">-</div>
-            </div>
-            <div class="info-item">
-              <strong>Class:</strong>
-              <div id="studentClass">-</div>
-            </div>
-            <div class="info-item">
-              <strong>Combination:</strong>
-              <div id="studentCombination">-</div>
-            </div>
-            <div class="info-item">
-              <strong>Account Status:</strong>
-              <div id="studentStatus">-</div>
-            </div>
+    <div
+      id="publicationModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 30px;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+          position: relative;
+        "
+      >
+        <button
+          id="closePublicationModal"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+          "
+        >
+          &times;
+        </button>
+        <h3 style="margin-top: 0">Add Publication Note</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px">
+          Document what was discussed during your seminar.
+        </p>
+        <form id="createPublicationFormNative">
+          <input type="hidden" id="pubDiscId" />
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Publication Details</label
+            >
+            <textarea
+              id="pubText"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              rows="5"
+              required
+            ></textarea>
           </div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-card">
-            <h3>Available Notes</h3>
-            <p class="stat-number" id="notesCount">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Available Activities & Quizzes</h3>
-            <p class="stat-number" id="quizzesCount">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Learning Resources</h3>
-            <p class="stat-number" id="resourcesCount">0</p>
-          </div>
-          <div class="stat-card">
-            <h3>Discussions & Seminars</h3>
-            <p class="stat-number" id="discussionsCount">0</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Notes tab -->
-      <section id="notesTab" class="tab-content" style="display: none">
-        <div class="section-header">
-          <h2>Your Class Notes</h2>
-          <div class="filters">
-            <input type="text" id="notesSearch" placeholder="Search notes by title or subject..." />
-          </div>
-        </div>
-        <div id="notesContainer" class="notes-grid"></div>
-      </section>
-
-      <!-- Quizzes tab -->
-      <section id="quizzesTab" class="tab-content" style="display: none">
-        <div class="section-header">
-          <h2>Activities & Quizzes</h2>
-          <div class="filters">
-            <input type="text" id="quizzesSearch" placeholder="Search activities & quizzes..." />
-          </div>
-        </div>
-        <div id="quizzesContainer" class="notes-grid"></div>
-      </section>
-
-      <!-- Resources tab -->
-      <section id="resourcesTab" class="tab-content" style="display: none">
-        <div class="section-header">
-          <h2>Extra Resources</h2>
-        </div>
-        <div id="resourcesContainer" class="notes-grid"></div>
-      </section>
-
-      <!-- Discussions tab -->
-      <section id="discussionsTab" class="tab-content" style="display: none">
-        <div class="section-header">
-          <h2>Discussions & Seminars</h2>
-          <div class="filters">
-            <button class="btn-primary" id="openProposeDiscussionBtn">+ Propose Discussion</button>
-          </div>
-        </div>
-        <div id="discussionsContainer" class="notes-grid"></div>
-      </section>
-
-      <!-- Profile tab -->
-      <section id="profileTab" class="tab-content" style="display: none">
-        <div class="profile-card">
-          <div class="profile-info">
-            <h3>Your Profile</h3>
-            <p><strong>Name:</strong> <span id="profileName">-</span></p>
-            <p><strong>Email:</strong> <span id="profileEmail">-</span></p>
-            <p><strong>Level:</strong> <span id="profileLevel">-</span></p>
-            <p><strong>Class:</strong> <span id="profileClass">-</span></p>
-            <p>
-              <strong>Combination:</strong>
-              <span id="profileCombination">-</span>
-            </p>
-            <p>
-              <strong>Status:</strong>
-              <span id="profileStatus">-</span>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- Searchroom tab -->
-      <section id="searchroomTab" class="tab-content" style="display: none">
-        <div class="section-header">
-          <h2>🔬 Searchroom AI Research</h2>
-        </div>
-        <div class="searchroom-container">
-          <div class="chat-header">
-            <h3>Academic Assistant</h3>
-            <button class="btn-sm btn-logout" id="clearChatBtn"
-              style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);">Clear Session</button>
-          </div>
-          <div class="chat-messages" id="chatMessages">
-            <div class="message ai">
-              Hello! I'm your Searchroom academic assistant. Ask me any research questions related to your studies, and
-              I'll help you understand the concepts!
-            </div>
-          </div>
-          <div id="typingIndicator" class="typing-indicator"
-            style="padding: 0 1.5rem 0.5rem 1.5rem; background: #f8f9fb;">AI is thinking...</div>
-          <form class="chat-input-area" id="chatForm">
-            <input type="text" id="chatInput"
-              placeholder="Ask a research question (e.g. 'Explain the laws of thermodynamics')..." autocomplete="off"
-              required />
-            <button type="submit" class="btn-send">📤</button>
-          </form>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- Native Modals -->
-  <div id="discussionModalOverlay"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:30px; border-radius:12px; max-width:500px; width:90%; position:relative;">
-      <button id="closeDiscussionModal"
-        style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
-      <h3 style="margin-top:0;">Propose a Discussion/Seminar</h3>
-      <form id="createDiscussionFormNative" style="margin-top:20px;">
-        <div style="margin-bottom:15px;">
-          <label style="display:block; margin-bottom:5px; font-weight:600; color:#555;">Title</label>
-          <input type="text" id="discTitle" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"
-            required />
-        </div>
-        <div style="margin-bottom:15px;">
-          <label style="display:block; margin-bottom:5px; font-weight:600; color:#555;">Description</label>
-          <textarea id="discDesc" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" rows="3"
-            required></textarea>
-        </div>
-        <div style="margin-bottom:15px;">
-          <label style="display:block; margin-bottom:5px; font-weight:600; color:#555;">Meeting Link</label>
-          <input type="url" id="discLink" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;"
-            placeholder="https://zoom.us/j/..." required />
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px;">Submit Proposal</button>
-      </form>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%; margin-top: 10px; background: #28a745"
+          >
+            Save Publication
+          </button>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <div id="publicationModalOverlay"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:#fff; padding:30px; border-radius:12px; max-width:500px; width:90%; position:relative;">
-      <button id="closePublicationModal"
-        style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
-      <h3 style="margin-top:0;">Add Publication Note</h3>
-      <p style="color:#666; font-size:14px; margin-bottom:20px;">Document what was discussed during your seminar.</p>
-      <form id="createPublicationFormNative">
-        <input type="hidden" id="pubDiscId" />
-        <div style="margin-bottom:15px;">
-          <label style="display:block; margin-bottom:5px; font-weight:600; color:#555;">Publication Details</label>
-          <textarea id="pubText" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px;" rows="5"
-            required></textarea>
-        </div>
-        <button type="submit" class="btn-primary" style="width:100%; margin-top:10px; background:#28a745;">Save
-          Publication</button>
-      </form>
-    </div>
-  </div>
+    <script src="/assets/js/utils.js"></script>
+    <script src="/assets/js/auth.js"></script>
+    <script>
+      let allNotes = [];
+      let allQuizzes = [];
+      let allResources = [];
+      let currentSubjectNotes = null;
+      let currentSubjectQuizzes = null;
+      let currentSubjectResources = null;
 
-  <script src="/assets/js/utils.js"></script>
-  <script src="/assets/js/auth.js"></script>
-  <script>
-    let allNotes = [];
-    let allQuizzes = [];
-    let allResources = [];
-    let currentSubjectNotes = null;
-    let currentSubjectQuizzes = null;
-    let currentSubjectResources = null;
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      const user = await getCurrentUser();
-      if (!user) {
-        logout();
-        return;
-      }
-
-      if (user.role === "admin") {
-        window.location.href = "/pages/admin-dashboard.html";
-        return;
-      }
-
-      if (user.role !== "student") {
-        logout();
-        return;
-      }
-
-      // Fill basic info
-      document.getElementById("studentNameNav").textContent = user.name;
-      document.getElementById("studentName").textContent = user.name;
-      document.getElementById("studentLevel").textContent = user.level || "-";
-      document.getElementById("studentClass").textContent = (
-        user.class || "-"
-      ).toUpperCase();
-      document.getElementById("studentCombination").textContent =
-        user.combination || "-";
-
-      const statusText = user.isConfirmed ? "Confirmed" : "Pending Approval";
-      document.getElementById("studentStatus").textContent = statusText;
-
-      // Profile tab info
-      document.getElementById("profileName").textContent = user.name;
-      document.getElementById("profileEmail").textContent = user.email;
-      document.getElementById("profileLevel").textContent = user.level || "-";
-      document.getElementById("profileClass").textContent = (
-        user.class || "-"
-      ).toUpperCase();
-      document.getElementById("profileCombination").textContent =
-        user.combination || "-";
-      document.getElementById("profileStatus").textContent = statusText;
-
-      // Logout button
-      const logoutBtn = document.getElementById("logoutBtn");
-      if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
+      document.addEventListener("DOMContentLoaded", async () => {
+        const user = await getCurrentUser();
+        if (!user) {
           logout();
-        });
-      }
-
-      // Sidebar tab switching
-      document.querySelectorAll(".sidebar-link").forEach((link) => {
-        link.addEventListener("click", (e) => {
-          e.preventDefault();
-          const tab = link.getAttribute("data-tab");
-          switchTab(tab);
-        });
-      });
-
-      // Notes search
-      const notesSearch = document.getElementById("notesSearch");
-      if (notesSearch) {
-        notesSearch.addEventListener("input", () => renderNotes(allNotes));
-      }
-
-      const quizzesSearch = document.getElementById("quizzesSearch");
-      if (quizzesSearch) {
-        quizzesSearch.addEventListener("input", () =>
-          renderQuizzes(allQuizzes),
-        );
-      }
-
-      // Set up discussion modals (must happen AFTER DOM is ready)
-      setupDiscussionListeners();
-
-      // Set up Searchroom
-      setupSearchroom();
-
-      // Load data for this student (filtered by level & class)
-      await loadDashboardData(user);
-    });
-
-    async function loadDashboardData(user) {
-      await Promise.all([
-        loadNotesForStudent(user),
-        loadQuizzesForStudent(user),
-        loadResourcesForStudent(user),
-        loadDiscussionsForStudent(user),
-      ]);
-    }
-
-    // --- Searchroom Logic ---
-    function setupSearchroom() {
-      const chatForm = document.getElementById("chatForm");
-      const chatInput = document.getElementById("chatInput");
-      const chatMessages = document.getElementById("chatMessages");
-      const typingIndicator = document.getElementById("typingIndicator");
-      const clearChatBtn = document.getElementById("clearChatBtn");
-
-      if (!chatForm) return;
-
-      chatForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const message = chatInput.value.trim();
-        if (!message) return;
-
-        // Add user message
-        addMessage(message, 'user');
-        chatInput.value = '';
-        chatInput.focus();
-
-        // Show typing indicator
-        typingIndicator.style.display = 'block';
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        try {
-          const res = await authFetch(`${API_BASE}/searchroom/query`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-          });
-
-          const data = await res.json();
-          typingIndicator.style.display = 'none';
-
-          if (data.success) {
-            addMessage(data.data.reply, 'ai');
-          } else {
-            addMessage(data.message || "Sorry, I encountered an error.", 'ai', true);
-          }
-        } catch (err) {
-          typingIndicator.style.display = 'none';
-          addMessage("Could not connect to the AI service. Please try again later.", 'ai', true);
+          return;
         }
+
+        if (user.role === "admin") {
+          window.location.href = "/pages/admin-dashboard.html";
+          return;
+        }
+
+        if (user.role !== "student") {
+          logout();
+          return;
+        }
+
+        // Fill basic info
+        document.getElementById("studentNameNav").textContent = user.name;
+        document.getElementById("studentName").textContent = user.name;
+        document.getElementById("studentLevel").textContent = user.level || "-";
+        document.getElementById("studentClass").textContent = (
+          user.class || "-"
+        ).toUpperCase();
+        document.getElementById("studentCombination").textContent =
+          user.combination || "-";
+
+        const statusText = user.isConfirmed ? "Confirmed" : "Pending Approval";
+        document.getElementById("studentStatus").textContent = statusText;
+
+        // Profile tab info
+        document.getElementById("profileName").textContent = user.name;
+        document.getElementById("profileEmail").textContent = user.email;
+        document.getElementById("profileLevel").textContent = user.level || "-";
+        document.getElementById("profileClass").textContent = (
+          user.class || "-"
+        ).toUpperCase();
+        document.getElementById("profileCombination").textContent =
+          user.combination || "-";
+        document.getElementById("profileStatus").textContent = statusText;
+
+        // Logout button
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+          logoutBtn.addEventListener("click", () => {
+            logout();
+          });
+        }
+
+        // Sidebar tab switching
+        document.querySelectorAll(".sidebar-link").forEach((link) => {
+          link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const tab = link.getAttribute("data-tab");
+            switchTab(tab);
+          });
+        });
+
+        // Notes search
+        const notesSearch = document.getElementById("notesSearch");
+        if (notesSearch) {
+          notesSearch.addEventListener("input", () => renderNotes(allNotes));
+        }
+
+        const quizzesSearch = document.getElementById("quizzesSearch");
+        if (quizzesSearch) {
+          quizzesSearch.addEventListener("input", () =>
+            renderQuizzes(allQuizzes),
+          );
+        }
+
+        // Set up discussion modals (must happen AFTER DOM is ready)
+        setupDiscussionListeners();
+
+        // Set up Searchroom
+        setupSearchroom();
+
+        // Load data for this student (filtered by level & class)
+        await loadDashboardData(user);
       });
 
-      if (clearChatBtn) {
-        clearChatBtn.addEventListener("click", () => {
-          chatMessages.innerHTML = `
+      async function loadDashboardData(user) {
+        await Promise.all([
+          loadNotesForStudent(user),
+          loadQuizzesForStudent(user),
+          loadResourcesForStudent(user),
+          loadDiscussionsForStudent(user),
+        ]);
+      }
+
+      // --- Searchroom Logic ---
+      function setupSearchroom() {
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatMessages = document.getElementById("chatMessages");
+        const typingIndicator = document.getElementById("typingIndicator");
+        const clearChatBtn = document.getElementById("clearChatBtn");
+
+        if (!chatForm) return;
+
+        chatForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const message = chatInput.value.trim();
+          if (!message) return;
+
+          // Add user message
+          addMessage(message, "user");
+          chatInput.value = "";
+          chatInput.focus();
+
+          // Show typing indicator
+          typingIndicator.style.display = "block";
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          try {
+            const res = await authFetch(`${API_BASE}/searchroom/query`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message }),
+            });
+
+            const data = await res.json();
+            typingIndicator.style.display = "none";
+
+            if (data.success) {
+              addMessage(data.data.reply, "ai");
+            } else {
+              addMessage(
+                data.message || "Sorry, I encountered an error.",
+                "ai",
+                true,
+              );
+            }
+          } catch (err) {
+            typingIndicator.style.display = "none";
+            addMessage(
+              "Could not connect to the AI service. Please try again later.",
+              "ai",
+              true,
+            );
+          }
+        });
+
+        if (clearChatBtn) {
+          clearChatBtn.addEventListener("click", () => {
+            chatMessages.innerHTML = `
             <div class="message ai">
               Session cleared. How else can I help with your research today?
             </div>
           `;
-        });
+          });
+        }
       }
-    }
 
-    function addMessage(text, sender, isError = false) {
-      const chatMessages = document.getElementById("chatMessages");
-      const msgDiv = document.createElement("div");
-      msgDiv.className = `message ${sender} ${isError ? 'text-danger' : ''}`;
+      function addMessage(text, sender, isError = false) {
+        const chatMessages = document.getElementById("chatMessages");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${sender} ${isError ? "text-danger" : ""}`;
 
-      // Handle basic line breaks from AI
-      const formattedText = text.replace(/\n/g, '<br/>');
-      msgDiv.innerHTML = formattedText;
+        // Handle basic line breaks from AI
+        const formattedText = text.replace(/\n/g, "<br/>");
+        msgDiv.innerHTML = formattedText;
 
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
 
-    function switchTab(tab) {
-      document
-        .querySelectorAll(".sidebar-link")
-        .forEach((l) => l.classList.remove("active"));
-      const activeLink = document.querySelector(
-        `.sidebar-link[data-tab="${tab}"]`,
-      );
-      if (activeLink) activeLink.classList.add("active");
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".sidebar-link")
+          .forEach((l) => l.classList.remove("active"));
+        const activeLink = document.querySelector(
+          `.sidebar-link[data-tab="${tab}"]`,
+        );
+        if (activeLink) activeLink.classList.add("active");
 
-      document
-        .querySelectorAll(".tab-content")
-        .forEach((section) => (section.style.display = "none"));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((section) => (section.style.display = "none"));
 
-      const tabEl = document.getElementById(
-        tab === "dashboard" ? "dashboardTab" : `${tab}Tab`,
-      );
-      if (tabEl) tabEl.style.display = "block";
-    }
+        const tabEl = document.getElementById(
+          tab === "dashboard" ? "dashboardTab" : `${tab}Tab`,
+        );
+        if (tabEl) tabEl.style.display = "block";
+      }
 
-    async function loadNotesForStudent(user) {
-      const container = document.getElementById("notesContainer");
-      if (!container) return;
+      async function loadNotesForStudent(user) {
+        const container = document.getElementById("notesContainer");
+        if (!container) return;
 
-      container.innerHTML =
-        '<div class="loading">Loading notes for your class...</div>';
+        container.innerHTML =
+          '<div class="loading">Loading notes for your class...</div>';
 
-      try {
-        const params = new URLSearchParams();
-        if (user.level) params.append("level", user.level);
-        if (user.class) params.append("class", user.class);
+        try {
+          const params = new URLSearchParams();
+          if (user.level) params.append("level", user.level);
+          if (user.class) params.append("class", user.class);
 
-        let url = `${API_BASE}/notes`;
-        const query = params.toString();
-        if (query) url += "?" + query;
+          let url = `${API_BASE}/notes`;
+          const query = params.toString();
+          if (query) url += "?" + query;
 
-        const res = await fetch(url, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        });
+          const res = await fetch(url, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+          });
 
-        if (!res.ok) {
-          throw new Error("Failed to load notes");
+          if (!res.ok) {
+            throw new Error("Failed to load notes");
+          }
+
+          const data = await res.json();
+          allNotes = data.data || [];
+
+          document.getElementById("notesCount").textContent = allNotes.length;
+          renderNotes(allNotes);
+        } catch (err) {
+          console.error("Failed to load notes", err);
+          container.innerHTML =
+            '<div class="no-data">Could not load notes. Please try again later.</div>';
+        }
+      }
+
+      function renderNotes(notes) {
+        const container = document.getElementById("notesContainer");
+        if (!container) return;
+
+        if (!notes.length) {
+          container.innerHTML =
+            '<div class="no-data">No notes found for your class yet.</div>';
+          return;
         }
 
-        const data = await res.json();
-        allNotes = data.data || [];
+        if (currentSubjectNotes) {
+          // Show notes for specific subject
+          const filtered = notes.filter(
+            (n) => n.subject === currentSubjectNotes,
+          );
+          const search = document
+            .getElementById("notesSearch")
+            .value.toLowerCase();
+          const searched = filtered.filter(
+            (n) =>
+              n.title.toLowerCase().includes(search) ||
+              (n.description && n.description.toLowerCase().includes(search)),
+          );
 
-        document.getElementById("notesCount").textContent = allNotes.length;
-        renderNotes(allNotes);
-      } catch (err) {
-        console.error("Failed to load notes", err);
-        container.innerHTML =
-          '<div class="no-data">Could not load notes. Please try again later.</div>';
-      }
-    }
-
-    function renderNotes(notes) {
-      const container = document.getElementById("notesContainer");
-      if (!container) return;
-
-      if (!notes.length) {
-        container.innerHTML =
-          '<div class="no-data">No notes found for your class yet.</div>';
-        return;
-      }
-
-      if (currentSubjectNotes) {
-        // Show notes for specific subject
-        const filtered = notes.filter(
-          (n) => n.subject === currentSubjectNotes,
-        );
-        const search = document
-          .getElementById("notesSearch")
-          .value.toLowerCase();
-        const searched = filtered.filter(
-          (n) =>
-            n.title.toLowerCase().includes(search) ||
-            (n.description && n.description.toLowerCase().includes(search)),
-        );
-
-        container.innerHTML = `
+          container.innerHTML = `
           <div class="subject-header">
             <button class="btn-sm btn-secondary" onclick="clearSubjectFilter('notes')">← Back to Subjects</button>
             <h3>Subject: ${currentSubjectNotes}</h3>
           </div>
           <div class="notes-grid">
-            ${searched
-            .map(
-              (note) => `
+            ${
+              searched
+                .map(
+                  (note) => `
               <article class="note-card">
                 <div class="note-header">
                   <h3>${note.title}</h3>
@@ -518,84 +714,85 @@
                 </div>
               </article>
             `,
-            )
-            .join("") || '<div class="no-data">No results found</div>'
-          }
+                )
+                .join("") || '<div class="no-data">No results found</div>'
+            }
           </div>
         `;
-      } else {
-        // Show subject tiles
-        const subjects = [...new Set(notes.map((n) => n.subject))];
-        container.innerHTML = `
+        } else {
+          // Show subject tiles
+          const subjects = [...new Set(notes.map((n) => n.subject))];
+          container.innerHTML = `
           <div class="subject-tile-grid">
             ${subjects
-            .map((subject) => {
-              const count = notes.filter((n) => n.subject === subject).length;
-              return `
+              .map((subject) => {
+                const count = notes.filter((n) => n.subject === subject).length;
+                return `
                 <div class="subject-tile" onclick="setSubjectFilter('notes', '${subject}')">
                   <div class="tile-icon">📚</div>
                   <h4>${subject}</h4>
                   <p>${count} items</p>
                 </div>
               `;
-            })
-            .join("")}
+              })
+              .join("")}
           </div>
         `;
-      }
-    }
-
-    async function loadQuizzesForStudent(user) {
-      const container = document.getElementById("quizzesContainer");
-      if (!container) return;
-      container.innerHTML = '<div class="loading">Loading quizzes...</div>';
-      try {
-        const res = await fetch(
-          `${API_BASE}/quizzes?level=${user.level}&class=${user.class}`,
-          {
-            headers: { Authorization: `Bearer ${getToken()}` },
-          },
-        );
-        const data = await res.json();
-        allQuizzes = data.data || [];
-        document.getElementById("quizzesCount").textContent =
-          allQuizzes.length;
-        renderQuizzes(allQuizzes);
-      } catch (err) {
-        container.innerHTML = '<div class="no-data">Failed to load</div>';
-      }
-    }
-
-    function renderQuizzes(quizzes) {
-      const container = document.getElementById("quizzesContainer");
-      if (!quizzes.length) {
-        container.innerHTML =
-          '<div class="no-data">No quizzes for your class yet.</div>';
-        return;
+        }
       }
 
-      if (currentSubjectQuizzes) {
-        const filtered = quizzes.filter(
-          (q) => q.subject === currentSubjectQuizzes,
-        );
-        const search = document
-          .getElementById("quizzesSearch")
-          .value.toLowerCase();
-        const searched = filtered.filter(
-          (q) =>
-            q.title.toLowerCase().includes(search) ||
-            (q.description && q.description.toLowerCase().includes(search)),
-        );
+      async function loadQuizzesForStudent(user) {
+        const container = document.getElementById("quizzesContainer");
+        if (!container) return;
+        container.innerHTML = '<div class="loading">Loading quizzes...</div>';
+        try {
+          const res = await fetch(
+            `${API_BASE}/quizzes?level=${user.level}&class=${user.class}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+          const data = await res.json();
+          allQuizzes = data.data || [];
+          document.getElementById("quizzesCount").textContent =
+            allQuizzes.length;
+          renderQuizzes(allQuizzes);
+        } catch (err) {
+          container.innerHTML = '<div class="no-data">Failed to load</div>';
+        }
+      }
 
-        container.innerHTML = `
+      function renderQuizzes(quizzes) {
+        const container = document.getElementById("quizzesContainer");
+        if (!quizzes.length) {
+          container.innerHTML =
+            '<div class="no-data">No quizzes for your class yet.</div>';
+          return;
+        }
+
+        if (currentSubjectQuizzes) {
+          const filtered = quizzes.filter(
+            (q) => q.subject === currentSubjectQuizzes,
+          );
+          const search = document
+            .getElementById("quizzesSearch")
+            .value.toLowerCase();
+          const searched = filtered.filter(
+            (q) =>
+              q.title.toLowerCase().includes(search) ||
+              (q.description && q.description.toLowerCase().includes(search)),
+          );
+
+          container.innerHTML = `
           <div class="subject-header">
             <button class="btn-sm btn-secondary" onclick="clearSubjectFilter('quizzes')">← Back to Subjects</button>
             <h3>Subject: ${currentSubjectQuizzes}</h3>
           </div>
           <div class="notes-grid">
-            ${searched
-            .map(
-              (quiz) => `
+            ${
+              searched
+                .map(
+                  (quiz) => `
               <article class="note-card">
                 <div class="note-header">
                   <h3>${quiz.title}</h3>
@@ -603,128 +800,129 @@
                 </div>
                 <p class="note-description">${quiz.description || ""}</p>
                 <div class="note-actions">
-                  ${quiz.type === "file"
-                  ? `<button class="btn-sm btn-primary" onclick="downloadQuiz('${quiz.id}', '${quiz.title}')">Download Quiz</button>`
-                  : `<button class="btn-sm btn-success" onclick="viewQuiz('${quiz.id}')">Start Quiz</button>`
-                }
+                  ${
+                    quiz.type === "file"
+                      ? `<button class="btn-sm btn-primary" onclick="downloadQuiz('${quiz.id}', '${quiz.title}')">Download Quiz</button>`
+                      : `<button class="btn-sm btn-success" onclick="viewQuiz('${quiz.id}')">Start Quiz</button>`
+                  }
                 </div>
               </article>
             `,
-            )
-            .join("") || '<div class="no-data">No results found</div>'
-          }
+                )
+                .join("") || '<div class="no-data">No results found</div>'
+            }
           </div>
         `;
-      } else {
-        const subjects = [...new Set(quizzes.map((q) => q.subject))];
-        container.innerHTML = `
+        } else {
+          const subjects = [...new Set(quizzes.map((q) => q.subject))];
+          container.innerHTML = `
           <div class="subject-tile-grid">
             ${subjects
-            .map((subject) => {
-              const count = quizzes.filter(
-                (q) => q.subject === subject,
-              ).length;
-              return `
+              .map((subject) => {
+                const count = quizzes.filter(
+                  (q) => q.subject === subject,
+                ).length;
+                return `
                 <div class="subject-tile" onclick="setSubjectFilter('quizzes', '${subject}')">
                   <div class="tile-icon">❓</div>
                   <h4>${subject}</h4>
                   <p>${count} items</p>
                 </div>
               `;
-            })
-            .join("")}
+              })
+              .join("")}
           </div>
         `;
-      }
-    }
-
-    function setSubjectFilter(type, subject) {
-      if (type === "notes") {
-        currentSubjectNotes = subject;
-        renderNotes(allNotes);
-      } else if (type === "quizzes") {
-        currentSubjectQuizzes = subject;
-        renderQuizzes(allQuizzes);
-      } else if (type === "resources") {
-        currentSubjectResources = subject;
-        renderResources(allResources);
-      }
-    }
-
-    function clearSubjectFilter(type) {
-      if (type === "notes") {
-        currentSubjectNotes = null;
-        renderNotes(allNotes);
-      } else if (type === "quizzes") {
-        currentSubjectQuizzes = null;
-        renderQuizzes(allQuizzes);
-      } else if (type === "resources") {
-        currentSubjectResources = null;
-        renderResources(allResources);
-      }
-    }
-
-    async function loadResourcesForStudent(user) {
-      const container = document.getElementById("resourcesContainer");
-      if (!container) return;
-      try {
-        const res = await fetch(
-          `${API_BASE}/resources?level=${user.level}&class=${user.class}`,
-          {
-            headers: { Authorization: `Bearer ${getToken()}` },
-          },
-        );
-        const data = await res.json();
-        allResources = data.data || [];
-        document.getElementById("resourcesCount").textContent =
-          allResources.length;
-        renderResources(allResources);
-      } catch (err) { }
-    }
-
-    function renderResources(resources) {
-      const container = document.getElementById("resourcesContainer");
-      if (!container) return;
-
-      if (!resources.length) {
-        container.innerHTML =
-          '<div class="no-data">No extra resources for your class yet.</div>';
-        return;
+        }
       }
 
-      if (currentSubjectResources) {
-        const filtered = resources.filter(
-          (r) => r.subject === currentSubjectResources,
-        );
-        container.innerHTML = `
+      function setSubjectFilter(type, subject) {
+        if (type === "notes") {
+          currentSubjectNotes = subject;
+          renderNotes(allNotes);
+        } else if (type === "quizzes") {
+          currentSubjectQuizzes = subject;
+          renderQuizzes(allQuizzes);
+        } else if (type === "resources") {
+          currentSubjectResources = subject;
+          renderResources(allResources);
+        }
+      }
+
+      function clearSubjectFilter(type) {
+        if (type === "notes") {
+          currentSubjectNotes = null;
+          renderNotes(allNotes);
+        } else if (type === "quizzes") {
+          currentSubjectQuizzes = null;
+          renderQuizzes(allQuizzes);
+        } else if (type === "resources") {
+          currentSubjectResources = null;
+          renderResources(allResources);
+        }
+      }
+
+      async function loadResourcesForStudent(user) {
+        const container = document.getElementById("resourcesContainer");
+        if (!container) return;
+        try {
+          const res = await fetch(
+            `${API_BASE}/resources?level=${user.level}&class=${user.class}`,
+            {
+              headers: { Authorization: `Bearer ${getToken()}` },
+            },
+          );
+          const data = await res.json();
+          allResources = data.data || [];
+          document.getElementById("resourcesCount").textContent =
+            allResources.length;
+          renderResources(allResources);
+        } catch (err) {}
+      }
+
+      function renderResources(resources) {
+        const container = document.getElementById("resourcesContainer");
+        if (!container) return;
+
+        if (!resources.length) {
+          container.innerHTML =
+            '<div class="no-data">No extra resources for your class yet.</div>';
+          return;
+        }
+
+        if (currentSubjectResources) {
+          const filtered = resources.filter(
+            (r) => r.subject === currentSubjectResources,
+          );
+          container.innerHTML = `
           <div class="subject-header">
             <button class="btn-sm btn-secondary" onclick="clearSubjectFilter('resources')">← Back to Subjects</button>
             <h3>Subject: ${currentSubjectResources}</h3>
           </div>
           <div class="notes-grid">
             ${filtered
-            .map((res) => {
-              let actionButton = "";
-              if (
-                res.resourceType === "file" &&
-                res.fileType &&
-                res.fileType.startsWith("video/")
-              ) {
-                // Display video player for MP4 files
-                actionButton = `
+              .map((res) => {
+                let actionButton = "";
+                if (
+                  res.resourceType === "file" &&
+                  res.fileType &&
+                  res.fileType.startsWith("video/")
+                ) {
+                  // Display video player for MP4 files
+                  actionButton = `
                       <video controls style="width: 100%; max-width: 300px; margin-top: 10px;">
                         <source src="/api/resources/${res.id}/download" type="${res.fileType}">
                         Your browser does not support the video tag.
                       </video>
                     `;
-              } else if (res.resourceType === "file") {
-                // Download button for other file types
-                actionButton = `<a href="/api/resources/${res.id}/download" class="btn-sm btn-primary" style="text-decoration:none" download>Download File</a>`;
-              } else {
-                // Link for URL-based resources
-                actionButton = `<a href="${res.url}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none">Open Resource</a>`;
-              }
-              return `
+                } else if (res.resourceType === "file") {
+                  // Download button for other file types
+                  actionButton = `<a href="/api/resources/${res.id}/download" class="btn-sm btn-primary" style="text-decoration:none" download>Download File</a>`;
+                } else {
+                  // Link for URL-based resources
+                  actionButton = `<a href="${res.url}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none">Open Resource</a>`;
+                }
+                return `
                   <article class="note-card">
                     <div class="note-header">
                       <h3>${res.title}</h3>
@@ -736,76 +934,76 @@
                     </div>
                   </article>
                 `;
-            })
-            .join("")}
+              })
+              .join("")}
           </div>
         `;
-      } else {
-        const subjects = [...new Set(resources.map((r) => r.subject))];
-        container.innerHTML = `
+        } else {
+          const subjects = [...new Set(resources.map((r) => r.subject))];
+          container.innerHTML = `
           <div class="subject-tile-grid">
             ${subjects
-            .map((subject) => {
-              const count = resources.filter(
-                (r) => r.subject === subject,
-              ).length;
-              return `
+              .map((subject) => {
+                const count = resources.filter(
+                  (r) => r.subject === subject,
+                ).length;
+                return `
                 <div class="subject-tile" onclick="setSubjectFilter('resources', '${subject}')">
                   <div class="tile-icon">🔗</div>
                   <h4>${subject || "General"}</h4>
                   <p>${count} items</p>
                 </div>
               `;
-            })
-            .join("")}
+              })
+              .join("")}
           </div>
         `;
+        }
       }
-    }
 
-    async function downloadQuiz(id, title) {
-      try {
-        const res = await fetch(`${API_BASE}/quizzes/${id}/download`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = title.replace(/[^\w\-.]+/g, "_");
-        a.click();
-      } catch (err) {
-        alert("Download failed");
-      }
-    }
-
-    async function viewQuiz(id) {
-      try {
-        const res = await fetch(`${API_BASE}/quizzes/${id}/view`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
-
-        const contentType = res.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          const json = await res.json();
-          // It's a plain text quiz
-          showQuizContentModal(json.data.title, json.data.content);
-        } else {
+      async function downloadQuiz(id, title) {
+        try {
+          const res = await fetch(`${API_BASE}/quizzes/${id}/download`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
           const blob = await res.blob();
           const url = window.URL.createObjectURL(blob);
-          window.open(url, "_blank");
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = title.replace(/[^\w\-.]+/g, "_");
+          a.click();
+        } catch (err) {
+          alert("Download failed");
         }
-      } catch (err) {
-        alert("Could not open quiz");
       }
-    }
 
-    function showQuizContentModal(title, content) {
-      // Create a simple overlay
-      const overlay = document.createElement("div");
-      overlay.style =
-        "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;";
-      overlay.innerHTML = `
+      async function viewQuiz(id) {
+        try {
+          const res = await fetch(`${API_BASE}/quizzes/${id}/view`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const json = await res.json();
+            // It's a plain text quiz
+            showQuizContentModal(json.data.title, json.data.content);
+          } else {
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, "_blank");
+          }
+        } catch (err) {
+          alert("Could not open quiz");
+        }
+      }
+
+      function showQuizContentModal(title, content) {
+        // Create a simple overlay
+        const overlay = document.createElement("div");
+        overlay.style =
+          "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;";
+        overlay.innerHTML = `
         <div style="background:white;padding:30px;border-radius:10px;max-width:800px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
           <button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:10px;border:none;background:none;font-size:24px;cursor:pointer;">&times;</button>
           <h2>${title}</h2>
@@ -816,125 +1014,133 @@
           </div>
         </div>
       `;
-      document.body.appendChild(overlay);
-    }
-
-    async function viewNote(id) {
-      try {
-        const res = await fetch(`${API_BASE}/notes/${id}/view`, {
-          headers: { Authorization: `Bearer ${getToken()}` },
-        });
-        if (!res.ok) throw new Error("Could not view note");
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, "_blank");
-      } catch (err) {
-        alert("Failed to open note");
-      }
-    }
-
-    function filterNotes(term) {
-      const q = term.trim().toLowerCase();
-      if (!q) {
-        renderNotes(allNotes);
-        return;
+        document.body.appendChild(overlay);
       }
 
-      const filtered = allNotes.filter((note) => {
-        return (
-          (note.title && note.title.toLowerCase().includes(q)) ||
-          (note.subject && note.subject.toLowerCase().includes(q)) ||
-          (note.description && note.description.toLowerCase().includes(q))
-        );
-      });
+      async function viewNote(id) {
+        try {
+          const res = await fetch(`${API_BASE}/notes/${id}/view`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (!res.ok) throw new Error("Could not view note");
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, "_blank");
+        } catch (err) {
+          alert("Failed to open note");
+        }
+      }
 
-      renderNotes(filtered);
-    }
-
-    async function downloadNote(id, title) {
-      try {
-        const res = await fetch(`${API_BASE}/notes/${id}/download`, {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.message || "Failed to download note");
+      function filterNotes(term) {
+        const q = term.trim().toLowerCase();
+        if (!q) {
+          renderNotes(allNotes);
+          return;
         }
 
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = (title || "note").replace(/[^\w\-.]+/g, "_");
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-      } catch (err) {
-        console.error("Download failed", err);
-        alert(err.message || "Failed to download note");
-      }
-    }
+        const filtered = allNotes.filter((note) => {
+          return (
+            (note.title && note.title.toLowerCase().includes(q)) ||
+            (note.subject && note.subject.toLowerCase().includes(q)) ||
+            (note.description && note.description.toLowerCase().includes(q))
+          );
+        });
 
-    // --- Native Discussions Logic ---
-    let allDiscussions = [];
-    let currentUserSession = null;
-
-    function escapeHtml(unsafe) {
-      if (!unsafe) return '';
-      return unsafe.toString()
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    async function loadDiscussionsForStudent(user) {
-      currentUserSession = user;
-      const container = document.getElementById("discussionsContainer");
-      if (!container) return;
-
-      container.innerHTML = '<div class="loading">Loading discussions...</div>';
-      try {
-        const level = (user.level || '').toLowerCase();
-        const cls = (user.class || '').toLowerCase();
-        const res = await authFetch(`${API_BASE}/discussions?level=${level}&class=${cls}`);
-        const data = await res.json();
-        allDiscussions = data.data || [];
-        const countBadge = document.getElementById("discussionsCount");
-        if (countBadge) countBadge.textContent = allDiscussions.length;
-        renderDiscussionsTab();
-      } catch (err) {
-        container.innerHTML = '<div class="no-data text-danger">Failed to load discussions</div>';
-      }
-    }
-
-    function renderDiscussionsTab() {
-      const container = document.getElementById("discussionsContainer");
-      if (!container) return;
-
-      if (!allDiscussions.length) {
-        container.innerHTML = '<div class="no-data">No discussions found for your level. Propose a new seminar!</div>';
-        return;
+        renderNotes(filtered);
       }
 
-      container.innerHTML = `
+      async function downloadNote(id, title) {
+        try {
+          const res = await fetch(`${API_BASE}/notes/${id}/download`, {
+            headers: {
+              Authorization: `Bearer ${getToken()}`,
+            },
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.message || "Failed to download note");
+          }
+
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = (title || "note").replace(/[^\w\-.]+/g, "_");
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error("Download failed", err);
+          alert(err.message || "Failed to download note");
+        }
+      }
+
+      // --- Native Discussions Logic ---
+      let allDiscussions = [];
+      let currentUserSession = null;
+
+      function escapeHtml(unsafe) {
+        if (!unsafe) return "";
+        return unsafe
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      async function loadDiscussionsForStudent(user) {
+        currentUserSession = user;
+        const container = document.getElementById("discussionsContainer");
+        if (!container) return;
+
+        container.innerHTML =
+          '<div class="loading">Loading discussions...</div>';
+        try {
+          const level = (user.level || "").toLowerCase();
+          const cls = (user.class || "").toLowerCase();
+          const res = await authFetch(
+            `${API_BASE}/discussions?level=${level}&class=${cls}`,
+          );
+          const data = await res.json();
+          allDiscussions = data.data || [];
+          const countBadge = document.getElementById("discussionsCount");
+          if (countBadge) countBadge.textContent = allDiscussions.length;
+          renderDiscussionsTab();
+        } catch (err) {
+          container.innerHTML =
+            '<div class="no-data text-danger">Failed to load discussions</div>';
+        }
+      }
+
+      function renderDiscussionsTab() {
+        const container = document.getElementById("discussionsContainer");
+        if (!container) return;
+
+        if (!allDiscussions.length) {
+          container.innerHTML =
+            '<div class="no-data">No discussions found for your level. Propose a new seminar!</div>';
+          return;
+        }
+
+        container.innerHTML = `
         <div class="notes-grid">
-          ${allDiscussions.map(d => {
-        const isCreator = currentUserSession && d.createdById === currentUserSession.id;
-        let actionButton = '';
-        if (d.publicationText) {
-          actionButton = `<div style="margin-top:10px; background:#f8f9fa; padding:10px; border-left:4px solid #28a745; font-size:14px; border-radius:4px;">
+          ${allDiscussions
+            .map((d) => {
+              const isCreator =
+                currentUserSession && d.createdById === currentUserSession.id;
+              let actionButton = "";
+              if (d.publicationText) {
+                actionButton = `<div style="margin-top:10px; background:#f8f9fa; padding:10px; border-left:4px solid #28a745; font-size:14px; border-radius:4px;">
                 <strong>Publications/Notes:</strong><br/>${escapeHtml(d.publicationText)}</div>`;
-        } else if (isCreator) {
-          actionButton = `<button class="btn-sm btn-success mt-2" onclick="openNativePublicationModal('${d.id}')">Add Publication</button>`;
-        }
+              } else if (isCreator) {
+                actionButton = `<button class="btn-sm btn-success mt-2" onclick="openNativePublicationModal('${d.id}')">Add Publication</button>`;
+              }
 
-        return `
+              return `
               <article class="note-card">
                 <div class="note-header">
                   <h3 style="font-size:1.1rem; color:#0056b3; margin-bottom:5px;">${escapeHtml(d.title)}</h3>
@@ -948,97 +1154,121 @@
                 ${actionButton}
               </article>
             `;
-      }).join("")}
+            })
+            .join("")}
         </div>
       `;
-    }
+      }
 
-    // Modal listeners - called directly from init, NOT from a second DOMContentLoaded
-    function setupDiscussionListeners() {
-      const discOverlay = document.getElementById("discussionModalOverlay");
-      const closeDiscBtn = document.getElementById("closeDiscussionModal");
-      const discForm = document.getElementById("createDiscussionFormNative");
+      // Modal listeners - called directly from init, NOT from a second DOMContentLoaded
+      function setupDiscussionListeners() {
+        const discOverlay = document.getElementById("discussionModalOverlay");
+        const closeDiscBtn = document.getElementById("closeDiscussionModal");
+        const discForm = document.getElementById("createDiscussionFormNative");
 
-      // Use event delegation for the Propose button since it's inside a tab
-      document.addEventListener("click", (e) => {
-        if (e.target && e.target.id === "openProposeDiscussionBtn") {
-          discOverlay.style.display = "flex";
+        // Use event delegation for the Propose button since it's inside a tab
+        document.addEventListener("click", (e) => {
+          if (e.target && e.target.id === "openProposeDiscussionBtn") {
+            discOverlay.style.display = "flex";
+          }
+        });
+
+        if (closeDiscBtn)
+          closeDiscBtn.addEventListener(
+            "click",
+            () => (discOverlay.style.display = "none"),
+          );
+
+        if (discForm) {
+          discForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = discForm.querySelector("button[type='submit']");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
+
+            const data = {
+              title: document.getElementById("discTitle").value.trim(),
+              description: document.getElementById("discDesc").value.trim(),
+              meetingLink: document.getElementById("discLink").value.trim(),
+              class: (currentUserSession.class || "").toLowerCase(),
+              level: (currentUserSession.level || "").toLowerCase(),
+            };
+
+            try {
+              const resp = await authFetch(`${API_BASE}/discussions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              });
+              const parsed = await resp.json();
+              if (parsed.success || resp.ok) {
+                alert(
+                  "Discussion proposed successfully! Awaiting admin approval.",
+                );
+                discForm.reset();
+                discOverlay.style.display = "none";
+                loadDiscussionsForStudent(currentUserSession);
+              } else alert(parsed.message || "Failed to propose");
+            } catch (e) {
+              alert("Error proposing discussion");
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Submit Proposal";
+            }
+          });
         }
-      });
 
-      if (closeDiscBtn) closeDiscBtn.addEventListener("click", () => discOverlay.style.display = "none");
+        const pubOverlay = document.getElementById("publicationModalOverlay");
+        const closePubBtn = document.getElementById("closePublicationModal");
+        const pubForm = document.getElementById("createPublicationFormNative");
 
-      if (discForm) {
-        discForm.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const submitBtn = discForm.querySelector("button[type='submit']");
-          submitBtn.disabled = true; submitBtn.textContent = "Submitting...";
+        if (closePubBtn)
+          closePubBtn.addEventListener(
+            "click",
+            () => (pubOverlay.style.display = "none"),
+          );
 
-          const data = {
-            title: document.getElementById("discTitle").value.trim(),
-            description: document.getElementById("discDesc").value.trim(),
-            meetingLink: document.getElementById("discLink").value.trim(),
-            class: (currentUserSession.class || '').toLowerCase(),
-            level: (currentUserSession.level || '').toLowerCase(),
-          };
+        if (pubForm) {
+          pubForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = pubForm.querySelector("button[type='submit']");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saving...";
 
-          try {
-            const resp = await authFetch(`${API_BASE}/discussions`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(data),
-            });
-            const parsed = await resp.json();
-            if (parsed.success || resp.ok) {
-              alert("Discussion proposed successfully! Awaiting admin approval.");
-              discForm.reset();
-              discOverlay.style.display = "none";
-              loadDiscussionsForStudent(currentUserSession);
-            } else alert(parsed.message || "Failed to propose");
-          } catch (e) { alert("Error proposing discussion"); }
-          finally { submitBtn.disabled = false; submitBtn.textContent = "Submit Proposal"; }
-        });
+            const id = document.getElementById("pubDiscId").value;
+            const text = document.getElementById("pubText").value.trim();
+
+            try {
+              const resp = await authFetch(
+                `${API_BASE}/discussions/${id}/publication`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ publicationText: text }),
+                },
+              );
+              const parsed = await resp.json();
+              if (parsed.success || resp.ok) {
+                alert("Publication added!");
+                pubOverlay.style.display = "none";
+                loadDiscussionsForStudent(currentUserSession);
+              } else alert(parsed.message || "Failed to add publication");
+            } catch (e) {
+              alert("Error");
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Save Publication";
+            }
+          });
+        }
       }
 
-      const pubOverlay = document.getElementById("publicationModalOverlay");
-      const closePubBtn = document.getElementById("closePublicationModal");
-      const pubForm = document.getElementById("createPublicationFormNative");
-
-      if (closePubBtn) closePubBtn.addEventListener("click", () => pubOverlay.style.display = "none");
-
-      if (pubForm) {
-        pubForm.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const submitBtn = pubForm.querySelector("button[type='submit']");
-          submitBtn.disabled = true; submitBtn.textContent = "Saving...";
-
-          const id = document.getElementById("pubDiscId").value;
-          const text = document.getElementById("pubText").value.trim();
-
-          try {
-            const resp = await authFetch(`${API_BASE}/discussions/${id}/publication`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ publicationText: text }),
-            });
-            const parsed = await resp.json();
-            if (parsed.success || resp.ok) {
-              alert("Publication added!");
-              pubOverlay.style.display = "none";
-              loadDiscussionsForStudent(currentUserSession);
-            } else alert(parsed.message || "Failed to add publication");
-          } catch (e) { alert("Error"); }
-          finally { submitBtn.disabled = false; submitBtn.textContent = "Save Publication"; }
-        });
-      }
-    }
-
-    window.openNativePublicationModal = (id) => {
-      document.getElementById("pubDiscId").value = id;
-      document.getElementById("pubText").value = "";
-      document.getElementById("publicationModalOverlay").style.display = "flex";
-    };
-  </script>
-</body>
-
+      window.openNativePublicationModal = (id) => {
+        document.getElementById("pubDiscId").value = id;
+        document.getElementById("pubText").value = "";
+        document.getElementById("publicationModalOverlay").style.display =
+          "flex";
+      };
+    </script>
+  </body>
 </html>

@@ -36,10 +36,10 @@ function checkRateLimit(userId) {
 // ---------------------------------------------------------------------------
 const OPENAI_MODEL = "gpt-4o-mini";
 const GEMINI_MODELS = [
+  "gemini-1.5-flash",
   "gemini-2.0-flash",
   "gemini-2.5-flash",
   "gemini-flash-latest",
-  "gemini-1.5-flash",
   "gemini-pro-latest",
 ];
 
@@ -87,16 +87,18 @@ exports.query = async (req, res, next) => {
     }
 
     if (!checkRateLimit(req.user.id)) {
-      return res
-        .status(429)
-        .json({
-          success: false,
-          message: "Too many requests. Please wait a moment.",
-        });
+      return res.status(429).json({
+        success: false,
+        message: "Too many requests. Please wait a moment.",
+      });
     }
 
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY
+      ? process.env.OPENAI_API_KEY.trim()
+      : null;
+    const geminiKey = process.env.GEMINI_API_KEY
+      ? process.env.GEMINI_API_KEY.trim()
+      : null;
 
     console.log(
       `[Searchroom] Keys detected - OpenAI: ${!!openaiKey}, Gemini: ${!!geminiKey}`,
@@ -138,7 +140,7 @@ exports.query = async (req, res, next) => {
 
     // --- 2. Try Gemini (Fallback) ---
     if (!reply && geminiKey) {
-      const genAI = new GoogleGenerativeAI(geminiKey, { apiVersion: "v1beta" });
+      const genAI = new GoogleGenerativeAI(geminiKey);
 
       for (const modelName of GEMINI_MODELS) {
         try {

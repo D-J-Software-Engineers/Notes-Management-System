@@ -147,6 +147,8 @@ jobs:
         run: npm test
         env:
           NODE_ENV: test
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       # 14. Upload coverage reports (optional)
       - name: Upload test coverage
@@ -176,4 +178,6 @@ jobs:
         run: npm run test:ai
         env:
           NODE_ENV: test
-          # Note: No real API keys needed due to mocks
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Note: No real API keys needed due to mocks, but good practice

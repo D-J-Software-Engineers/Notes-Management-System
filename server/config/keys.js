@@ -12,7 +12,7 @@
  */
 
 module.exports = {
-  // Replace these with your real keys before building
-  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "YOUR_OPENAI_KEY_HERE",
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "YOUR_GEMINI_KEY_HERE",
+  // These keys are now safely loaded from environment variables or GitHub Secrets
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
 };

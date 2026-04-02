@@ -43,6 +43,16 @@
             >
           </li>
           <li>
+            <a href="#" class="sidebar-link" data-tab="discussions"
+              >🗣️ Discussions</a
+            >
+          </li>
+          <li>
+            <a href="#" class="sidebar-link" data-tab="searchroom"
+              >🔬 Searchroom</a
+            >
+          </li>
+          <li>
             <a href="#" class="sidebar-link" data-tab="profile">👤 Profile</a>
           </li>
         </ul>
@@ -91,6 +101,10 @@
               <h3>Learning Resources</h3>
               <p class="stat-number" id="resourcesCount">0</p>
             </div>
+            <div class="stat-card">
+              <h3>Discussions & Seminars</h3>
+              <p class="stat-number" id="discussionsCount">0</p>
+            </div>
           </div>
         </section>
 
@@ -132,6 +146,19 @@
           <div id="resourcesContainer" class="notes-grid"></div>
         </section>
 
+        <!-- Discussions tab -->
+        <section id="discussionsTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>Discussions & Seminars</h2>
+            <div class="filters">
+              <button class="btn-primary" id="openProposeDiscussionBtn">
+                + Propose Discussion
+              </button>
+            </div>
+          </div>
+          <div id="discussionsContainer" class="notes-grid"></div>
+        </section>
+
         <!-- Profile tab -->
         <section id="profileTab" class="tab-content" style="display: none">
           <div class="profile-card">
@@ -152,7 +179,251 @@
             </div>
           </div>
         </section>
+
+        <!-- Searchroom tab -->
+        <section id="searchroomTab" class="tab-content" style="display: none">
+          <div class="section-header">
+            <h2>🔬 Searchroom AI Research</h2>
+          </div>
+          <div class="searchroom-container">
+            <div class="chat-header">
+              <h3>Academic Assistant</h3>
+              <button
+                class="btn-sm btn-logout"
+                id="clearChatBtn"
+                style="
+                  background: rgba(255, 255, 255, 0.1);
+                  border: 1px solid rgba(255, 255, 255, 0.2);
+                "
+              >
+                Clear Session
+              </button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message ai">
+                Hello! I'm your Searchroom academic assistant. Ask me any
+                research questions related to your studies, and I'll help you
+                understand the concepts!
+              </div>
+            </div>
+            <div
+              id="typingIndicator"
+              class="typing-indicator"
+              style="padding: 0 1.5rem 0.5rem 1.5rem; background: #f8f9fb"
+            >
+              AI is thinking...
+            </div>
+            <form class="chat-input-area" id="chatForm">
+              <input
+                type="text"
+                id="chatInput"
+                placeholder="Ask a research question (e.g. 'Explain the laws of thermodynamics')..."
+                autocomplete="off"
+                required
+              />
+              <button type="submit" class="btn-send">📤</button>
+            </form>
+          </div>
+        </section>
       </main>
+    </div>
+
+    <!-- Native Modals -->
+    <div
+      id="discussionModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 30px;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+          position: relative;
+        "
+      >
+        <button
+          id="closeDiscussionModal"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+          "
+        >
+          &times;
+        </button>
+        <h3 style="margin-top: 0">Propose a Discussion/Seminar</h3>
+        <form id="createDiscussionFormNative" style="margin-top: 20px">
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Title</label
+            >
+            <input
+              type="text"
+              id="discTitle"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              required
+            />
+          </div>
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Description</label
+            >
+            <textarea
+              id="discDesc"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              rows="3"
+              required
+            ></textarea>
+          </div>
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Meeting Link</label
+            >
+            <input
+              type="url"
+              id="discLink"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              placeholder="https://zoom.us/j/..."
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%; margin-top: 10px"
+          >
+            Submit Proposal
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div
+      id="publicationModalOverlay"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 30px;
+          border-radius: 12px;
+          max-width: 500px;
+          width: 90%;
+          position: relative;
+        "
+      >
+        <button
+          id="closePublicationModal"
+          style="
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            border: none;
+            background: none;
+            font-size: 20px;
+            cursor: pointer;
+          "
+        >
+          &times;
+        </button>
+        <h3 style="margin-top: 0">Add Publication Note</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px">
+          Document what was discussed during your seminar.
+        </p>
+        <form id="createPublicationFormNative">
+          <input type="hidden" id="pubDiscId" />
+          <div style="margin-bottom: 15px">
+            <label
+              style="
+                display: block;
+                margin-bottom: 5px;
+                font-weight: 600;
+                color: #555;
+              "
+              >Publication Details</label
+            >
+            <textarea
+              id="pubText"
+              style="
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+              "
+              rows="5"
+              required
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="btn-primary"
+            style="width: 100%; margin-top: 10px; background: #28a745"
+          >
+            Save Publication
+          </button>
+        </form>
+      </div>
     </div>
 
     <script src="/assets/js/utils.js"></script>
@@ -236,15 +507,11 @@
           );
         }
 
-        // Global click handler for download buttons
-        // DISABLED: Download functionality has been deactivated
-        // document.addEventListener("click", (e) => {
-        //   if (e.target.classList.contains("download-note-btn")) {
-        //     const noteId = e.target.getAttribute("data-note-id");
-        //     const noteTitle = e.target.getAttribute("data-note-title");
-        //     downloadNote(noteId, noteTitle);
-        //   }
-        // });
+        // Set up discussion modals (must happen AFTER DOM is ready)
+        setupDiscussionListeners();
+
+        // Set up Searchroom
+        setupSearchroom();
 
         // Load data for this student (filtered by level & class)
         await loadDashboardData(user);
@@ -255,7 +522,85 @@
           loadNotesForStudent(user),
           loadQuizzesForStudent(user),
           loadResourcesForStudent(user),
+          loadDiscussionsForStudent(user),
         ]);
+      }
+
+      // --- Searchroom Logic ---
+      function setupSearchroom() {
+        const chatForm = document.getElementById("chatForm");
+        const chatInput = document.getElementById("chatInput");
+        const chatMessages = document.getElementById("chatMessages");
+        const typingIndicator = document.getElementById("typingIndicator");
+        const clearChatBtn = document.getElementById("clearChatBtn");
+
+        if (!chatForm) return;
+
+        chatForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const message = chatInput.value.trim();
+          if (!message) return;
+
+          // Add user message
+          addMessage(message, "user");
+          chatInput.value = "";
+          chatInput.focus();
+
+          // Show typing indicator
+          typingIndicator.style.display = "block";
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          try {
+            const res = await authFetch(`${API_BASE}/searchroom/query`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message }),
+            });
+
+            const data = await res.json();
+            typingIndicator.style.display = "none";
+
+            if (data.success) {
+              addMessage(data.data.reply, "ai");
+            } else {
+              addMessage(
+                data.message || "Sorry, I encountered an error.",
+                "ai",
+                true,
+              );
+            }
+          } catch (err) {
+            typingIndicator.style.display = "none";
+            addMessage(
+              "Could not connect to the AI service. Please try again later.",
+              "ai",
+              true,
+            );
+          }
+        });
+
+        if (clearChatBtn) {
+          clearChatBtn.addEventListener("click", () => {
+            chatMessages.innerHTML = `
+            <div class="message ai">
+              Session cleared. How else can I help with your research today?
+            </div>
+          `;
+          });
+        }
+      }
+
+      function addMessage(text, sender, isError = false) {
+        const chatMessages = document.getElementById("chatMessages");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `message ${sender} ${isError ? "text-danger" : ""}`;
+
+        // Handle basic line breaks from AI
+        const formattedText = text.replace(/\n/g, "<br/>");
+        msgDiv.innerHTML = formattedText;
+
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
       }
 
       function switchTab(tab) {
@@ -731,6 +1076,199 @@
           alert(err.message || "Failed to download note");
         }
       }
+
+      // --- Native Discussions Logic ---
+      let allDiscussions = [];
+      let currentUserSession = null;
+
+      function escapeHtml(unsafe) {
+        if (!unsafe) return "";
+        return unsafe
+          .toString()
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      async function loadDiscussionsForStudent(user) {
+        currentUserSession = user;
+        const container = document.getElementById("discussionsContainer");
+        if (!container) return;
+
+        container.innerHTML =
+          '<div class="loading">Loading discussions...</div>';
+        try {
+          const level = (user.level || "").toLowerCase();
+          const cls = (user.class || "").toLowerCase();
+          const res = await authFetch(
+            `${API_BASE}/discussions?level=${level}&class=${cls}`,
+          );
+          const data = await res.json();
+          allDiscussions = data.data || [];
+          const countBadge = document.getElementById("discussionsCount");
+          if (countBadge) countBadge.textContent = allDiscussions.length;
+          renderDiscussionsTab();
+        } catch (err) {
+          container.innerHTML =
+            '<div class="no-data text-danger">Failed to load discussions</div>';
+        }
+      }
+
+      function renderDiscussionsTab() {
+        const container = document.getElementById("discussionsContainer");
+        if (!container) return;
+
+        if (!allDiscussions.length) {
+          container.innerHTML =
+            '<div class="no-data">No discussions found for your level. Propose a new seminar!</div>';
+          return;
+        }
+
+        container.innerHTML = `
+        <div class="notes-grid">
+          ${allDiscussions
+            .map((d) => {
+              const isCreator =
+                currentUserSession && d.createdById === currentUserSession.id;
+              let actionButton = "";
+              if (d.publicationText) {
+                actionButton = `<div style="margin-top:10px; background:#f8f9fa; padding:10px; border-left:4px solid #28a745; font-size:14px; border-radius:4px;">
+                <strong>Publications/Notes:</strong><br/>${escapeHtml(d.publicationText)}</div>`;
+              } else if (isCreator) {
+                actionButton = `<button class="btn-sm btn-success mt-2" onclick="openNativePublicationModal('${d.id}')">Add Publication</button>`;
+              }
+
+              return `
+              <article class="note-card">
+                <div class="note-header">
+                  <h3 style="font-size:1.1rem; color:#0056b3; margin-bottom:5px;">${escapeHtml(d.title)}</h3>
+                </div>
+                <p class="note-description" style="margin-bottom:10px;">${escapeHtml(d.description)}</p>
+                <div class="note-meta" style="margin-bottom:15px;">
+                  <span><strong class="badge bg-light text-dark border p-1 rounded">${d.class.toUpperCase()} - ${d.level.toUpperCase()}</strong></span>
+                  <span>Host: <strong>${d.createdBy ? escapeHtml(d.createdBy.name) : "Unknown"}</strong></span>
+                </div>
+                <a href="${escapeHtml(d.meetingLink)}" target="_blank" class="btn-sm btn-primary" style="text-decoration:none; display:inline-block; margin-bottom:5px;">Join Meeting 🔗</a>
+                ${actionButton}
+              </article>
+            `;
+            })
+            .join("")}
+        </div>
+      `;
+      }
+
+      // Modal listeners - called directly from init, NOT from a second DOMContentLoaded
+      function setupDiscussionListeners() {
+        const discOverlay = document.getElementById("discussionModalOverlay");
+        const closeDiscBtn = document.getElementById("closeDiscussionModal");
+        const discForm = document.getElementById("createDiscussionFormNative");
+
+        // Use event delegation for the Propose button since it's inside a tab
+        document.addEventListener("click", (e) => {
+          if (e.target && e.target.id === "openProposeDiscussionBtn") {
+            discOverlay.style.display = "flex";
+          }
+        });
+
+        if (closeDiscBtn)
+          closeDiscBtn.addEventListener(
+            "click",
+            () => (discOverlay.style.display = "none"),
+          );
+
+        if (discForm) {
+          discForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = discForm.querySelector("button[type='submit']");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Submitting...";
+
+            const data = {
+              title: document.getElementById("discTitle").value.trim(),
+              description: document.getElementById("discDesc").value.trim(),
+              meetingLink: document.getElementById("discLink").value.trim(),
+              class: (currentUserSession.class || "").toLowerCase(),
+              level: (currentUserSession.level || "").toLowerCase(),
+            };
+
+            try {
+              const resp = await authFetch(`${API_BASE}/discussions`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+              });
+              const parsed = await resp.json();
+              if (parsed.success || resp.ok) {
+                alert(
+                  "Discussion proposed successfully! Awaiting admin approval.",
+                );
+                discForm.reset();
+                discOverlay.style.display = "none";
+                loadDiscussionsForStudent(currentUserSession);
+              } else alert(parsed.message || "Failed to propose");
+            } catch (e) {
+              alert("Error proposing discussion");
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Submit Proposal";
+            }
+          });
+        }
+
+        const pubOverlay = document.getElementById("publicationModalOverlay");
+        const closePubBtn = document.getElementById("closePublicationModal");
+        const pubForm = document.getElementById("createPublicationFormNative");
+
+        if (closePubBtn)
+          closePubBtn.addEventListener(
+            "click",
+            () => (pubOverlay.style.display = "none"),
+          );
+
+        if (pubForm) {
+          pubForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const submitBtn = pubForm.querySelector("button[type='submit']");
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Saving...";
+
+            const id = document.getElementById("pubDiscId").value;
+            const text = document.getElementById("pubText").value.trim();
+
+            try {
+              const resp = await authFetch(
+                `${API_BASE}/discussions/${id}/publication`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ publicationText: text }),
+                },
+              );
+              const parsed = await resp.json();
+              if (parsed.success || resp.ok) {
+                alert("Publication added!");
+                pubOverlay.style.display = "none";
+                loadDiscussionsForStudent(currentUserSession);
+              } else alert(parsed.message || "Failed to add publication");
+            } catch (e) {
+              alert("Error");
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Save Publication";
+            }
+          });
+        }
+      }
+
+      window.openNativePublicationModal = (id) => {
+        document.getElementById("pubDiscId").value = id;
+        document.getElementById("pubText").value = "";
+        document.getElementById("publicationModalOverlay").style.display =
+          "flex";
+      };
     </script>
   </body>
 </html>

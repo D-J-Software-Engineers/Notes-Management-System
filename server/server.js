@@ -13,11 +13,18 @@ const subjectRoutes = require("./routes/subjectRoutes");
 const quizRoutes = require("./routes/quizRoutes");
 const streamRoutes = require("./routes/classStreamRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const superAdminRoutes = require("./routes/superAdminRoutes");
 const { errorHandler } = require("./middleware/errorHandler");
 const { serviceWindowMiddleware } = require("./middleware/serviceCheck");
 const seedDatabase = require("./utils/seedDatabase");
 const discussionRoutes = require("./routes/discussionRoutes");
 const searchroomRoutes = require("./routes/searchroomRoutes");
+const tenantMiddleware = require("./middleware/tenant");
+const { setupAssociations } = require("./models/associations");
+
+setupAssociations(require("./config/db").sequelize);
+
+// ... rest of imports
 
 // ... imports
 const fs = require("fs");
@@ -154,6 +161,11 @@ app.get("/api/test", (req, res) => {
 // API routes
 app.use("/api", serviceWindowMiddleware);
 app.use("/api/auth", authRoutes);
+
+// Apply protection and tenant isolation to all other API routes
+const { protect } = require("./middleware/auth");
+app.use("/api", protect, tenantMiddleware);
+
 app.use("/api/notes", noteRoutes);
 app.use("/api/resources", resourceRoutes);
 app.use("/api/users", userRoutes);
@@ -161,6 +173,7 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/streams", streamRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/super-admin", superAdminRoutes);
 app.use("/api/discussions", discussionRoutes);
 app.use("/api/searchroom", searchroomRoutes);
 

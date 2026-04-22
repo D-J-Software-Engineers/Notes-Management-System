@@ -87,22 +87,29 @@ async function handleLogin(event) {
     }
 
     const userRole = data.data.user.role;
+    const adminRoles = ["admin", "super_admin", "school_admin", "teacher"];
 
     // Verify user is accessing the correct login portal
     const params = new URLSearchParams(window.location.search);
     const portalRole = params.get("role");
 
-    if (portalRole && userRole !== portalRole) {
-      removeToken();
-      const portalName = portalRole === "admin" ? "Admin" : "Student";
-      const userType = userRole === "admin" ? "Admin" : "Student";
-      throw new Error(
-        `Access denied: ${userType} accounts cannot login via the ${portalName} portal.`,
-      );
+    if (portalRole) {
+      const isUserAdmin = adminRoles.includes(userRole);
+      const isPortalAdmin = portalRole === "admin";
+
+      if (isPortalAdmin && !isUserAdmin) {
+        removeToken();
+        throw new Error("Access denied: Student accounts cannot login via the Admin portal.");
+      }
+
+      if (!isPortalAdmin && isUserAdmin) {
+        removeToken();
+        throw new Error("Access denied: Staff accounts should login via the Admin portal.");
+      }
     }
 
     // Redirect based on role
-    if (userRole === "admin") {
+    if (adminRoles.includes(userRole)) {
       window.location.href = "/pages/admin-dashboard.html";
     } else if (userRole === "student") {
       window.location.href = "/pages/student-dashboard.html";
@@ -212,9 +219,10 @@ function checkAuthAndRedirect() {
       if (data && data.data) {
         const role = data.data.role;
         const currentPath = window.location.pathname;
+        const adminRoles = ["admin", "super_admin", "school_admin", "teacher"];
 
         // Redirect if on wrong dashboard
-        if (role === "admin" && !currentPath.includes("admin-dashboard")) {
+        if (adminRoles.includes(role) && !currentPath.includes("admin-dashboard")) {
           window.location.href = "/pages/admin-dashboard.html";
         } else if (
           role === "student" &&

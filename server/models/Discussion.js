@@ -56,6 +56,14 @@ const Discussion = sequelize.define(
         key: "id",
       },
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "discussions",

@@ -17,6 +17,24 @@ class RegisterPage {
       selectedSubsidiaries: [],
     };
     this.render();
+    this.loadSchools();
+  }
+
+  async loadSchools() {
+    try {
+      const res = await fetch(`${API_URL}/auth/schools`);
+      const data = await res.json();
+      const select = document.getElementById("schoolId");
+      const schools = data.data || [];
+      if (schools.length === 0) {
+        select.innerHTML = '<option value="">No schools available</option>';
+      } else {
+        select.innerHTML = '<option value="">-- Select Your School --</option>' +
+          schools.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+      }
+    } catch (err) {
+      document.getElementById("schoolId").innerHTML = '<option value="">Could not load schools</option>';
+    }
   }
 
   render() {
@@ -64,6 +82,13 @@ class RegisterPage {
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
                                 <input type="password" class="form-control" id="password" required minlength="6" placeholder="At least 6 characters">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Select Your School *</label>
+                                <select class="form-select" id="schoolId" required>
+                                    <option value="">-- Loading schools... --</option>
+                                </select>
+                                <small class="text-muted">Select the school you are registering for.</small>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -399,12 +424,18 @@ class RegisterPage {
       }
     }
 
+    const schoolId = document.getElementById("schoolId").value;
+    if (!schoolId) {
+      return this.showError("Please select your school before registering.");
+    }
+
     const payload = {
       name,
       email,
       password,
       level,
       class: classVal,
+      schoolId,
     };
 
     if (level === "o-level") {

@@ -11,6 +11,7 @@ let allNotes = [];
 let allQuizzes = [];
 let allResources = [];
 let allStreams = [];
+let allSchools = []; // New global to store school list
 let currentTab = "dashboard";
 
 // Token management functions
@@ -50,9 +51,20 @@ async function checkAuth() {
     }
 
     const data = await response.json();
+    currentAdmin = data.data;
 
-    // Strict role check: Only admins can access admin dashboard
-    if (data.data.role !== "admin") {
+    // If super admin, pre-load schools list as it's needed for user creation
+    if (currentAdmin.role === "super_admin") {
+      try {
+        const schRes = await fetch(`${API_BASE}/super-admin/schools`, { headers: { Authorization: `Bearer ${token}` } });
+        const schData = await schRes.json();
+        allSchools = schData.data || [];
+      } catch (e) { console.error("Schools pre-load failed"); }
+    }
+
+    // Strict role check: Only staff/admins can access admin dashboard
+    const adminRoles = ["admin", "super_admin", "school_admin", "teacher"];
+    if (!adminRoles.includes(data.data.role)) {
       window.location.href = "/pages/student-dashboard.html";
       return;
     }
@@ -88,13 +100,15 @@ function renderApp() {
             <aside class="admin-sidebar">
                 <ul class="sidebar-menu">
                     <li><a href="#" class="sidebar-link active" data-tab="dashboard">📊 Dashboard</a></li>
-                    <li><a href="#" class="sidebar-link" data-tab="students">👥 Students</a></li>
+                    ${currentAdmin.role === "super_admin" ? '<li><a href="#" class="sidebar-link" data-tab="schools">🏫 Schools (Platform)</a></li>' : ""}
+                    <li><a href="#" class="sidebar-link" data-tab="students">👥 Students / Staff</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="subjects">📖 Subjects</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="notes">📝 Notes</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="quizzes">❓ Activity/Quizzes</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="streams">📁 Streams</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="reset-requests">🔑 Reset Requests</a></li>
+                    ${currentAdmin.role === "super_admin" || (!currentAdmin.schoolId) ? '<li><a href="#" class="sidebar-link" data-tab="activation">🛡️ System Activation</a></li>' : ""}
                 </ul>
             </aside>
 
@@ -266,6 +280,19 @@ function switchTab(tabName) {
       setTimeout(() => {
         loadResetRequests();
       }, 10);
+    } else if (tabName === "schools" && currentAdmin.role === "super_admin") {
+      content = renderSchoolsTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        setupSchoolsListeners();
+        loadSchools();
+      }, 10);
+    } else if (tabName === "activation") {
+      content = renderActivationTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        loadActivationStatus();
+      }, 10);
     } else {
       console.error("Unknown tab:", tabName);
       mainContent.innerHTML = `<div class="error-message">Unknown tab: ${tabName}</div>`;
@@ -287,18 +314,26 @@ function switchTab(tabName) {
 // ============================================
 
 function renderDashboard() {
+  const isSuper = currentAdmin.role === "super_admin";
   return `
         <div id="dashboard" class="tab-content">
-            <h2>Dashboard Overview</h2>
+            <h2>${isSuper ? "Global Platform Overview" : "School Dashboard Overview"}</h2>
             <div class="stats-grid">
+                ${isSuper ? `
                 <div class="stat-card">
-                    <h3>Total Students</h3>
+                    <h3>Total Schools</h3>
+                    <p class="stat-number" id="totalSchools">0</p>
+                </div>
+                ` : ""}
+                <div class="stat-card">
+                    <h3>Total Users</h3>
                     <p class="stat-number" id="totalStudents">0</p>
                 </div>
                 <div class="stat-card">
                     <h3>Pending Approvals</h3>
                     <p class="stat-number" id="pendingStudents">0</p>
                 </div>
+                ${!isSuper ? `
                 <div class="stat-card">
                     <h3>Total Subjects</h3>
                     <p class="stat-number" id="totalSubjects">0</p>
@@ -319,6 +354,16 @@ function renderDashboard() {
                     <h3>Class Streams</h3>
                     <p class="stat-number" id="totalStreams">0</p>
                 </div>
+                ` : `
+                <div class="stat-card">
+                    <h3>Global Notes</h3>
+                    <p class="stat-number" id="totalNotes">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Global Quizzes</h3>
+                    <p class="stat-number" id="totalQuizzes">0</p>
+                </div>
+                `}
             </div>
         </div>
     `;
@@ -326,6 +371,24 @@ function renderDashboard() {
 
 async function loadDashboard() {
   try {
+    if (currentAdmin.role === "super_admin") {
+      const response = await fetch(`${API_BASE}/super-admin/stats`, {
+        headers: getAuthHeaders(),
+      });
+      const data = await response.json();
+      const stats = data.data;
+
+      if (document.getElementById("totalSchools"))
+        document.getElementById("totalSchools").textContent = stats.schools;
+      if (document.getElementById("totalStudents"))
+        document.getElementById("totalStudents").textContent = stats.users;
+      if (document.getElementById("totalNotes"))
+        document.getElementById("totalNotes").textContent = stats.notes;
+      if (document.getElementById("totalQuizzes"))
+        document.getElementById("totalQuizzes").textContent = stats.quizzes;
+      return;
+    }
+
     const [
       studentsRes,
       subjectsRes,
@@ -410,15 +473,19 @@ function renderStudentsTab() {
   return `
         <div id="students" class="tab-content">
             <div class="section-header">
-                <h2>Student Management</h2>
-                <div class="filters">
-                    <select id="studentFilter">
-                        <option value="all">All Students</option>
-                        <option value="pending">Pending Approval</option>
-                        <option value="confirmed">Confirmed</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
+                <h2>Student & Staff Management</h2>
+                <div class="header-actions">
+                    <button class="btn-primary" id="addUserBtn">+ Add New User/Staff</button>
                 </div>
+            </div>
+            <div class="filters">
+                <select id="studentFilter">
+                    <option value="all">All Users</option>
+                    <option value="student">Students Only</option>
+                    <option value="teacher">Teachers Only</option>
+                    <option value="school_admin">School Admins Only</option>
+                    <option value="pending">Pending Approval</option>
+                </select>
             </div>
             <div class="table-container">
                 <table class="data-table">
@@ -426,14 +493,14 @@ function renderStudentsTab() {
                         <tr>
                             <th>Name</th>
                             <th>Email</th>
-                            <th>Class</th>
-                            <th>Level</th>
+                            <th>Role</th>
+                            <th>Class/Section</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
-                        <tr><td colspan="6" class="loading">Loading students...</td></tr>
+                        <tr><td colspan="6" class="loading">Loading users...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -441,16 +508,130 @@ function renderStudentsTab() {
     `;
 }
 
+function showAddUserModal(preSelectedSchoolId = null) {
+  const isSuper = currentAdmin.role === "super_admin";
+  const content = `
+        <form id="userForm">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="userName" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" id="userEmail" required>
+            </div>
+            <div class="form-group">
+                <label>Initial Password *</label>
+                <input type="password" id="userPassword" value="123456" required>
+            </div>
+            
+            ${isSuper ? `
+            <div class="form-group">
+                <label>Assign to School *</label>
+                <select id="userSchool" required>
+                    <option value="">-- Select School --</option>
+                    <option value="system">Master / System Admin (No School)</option>
+                    ${allSchools.map(sch => `<option value="${sch.id}" ${preSelectedSchoolId === sch.id ? 'selected' : ''}>${sch.name}</option>`).join('')}
+                </select>
+            </div>
+            ` : ''}
+
+            <div class="form-group">
+                <label>Role *</label>
+                <select id="userRole" required>
+                    <option value="student">Student</option>
+                    <option value="teacher" ${preSelectedSchoolId ? '' : ''}>Teacher</option>
+                    ${isSuper ? '<option value="school_admin" ' + (preSelectedSchoolId ? 'selected' : '') + '>School Admin</option>' : ""}
+                </select>
+            </div>
+            <div id="studentFields">
+                <div class="form-group">
+                    <label>Level</label>
+                    <select id="userLevel">
+                        <option value="">N/A</option>
+                        <option value="o-level">O-Level</option>
+                        <option value="a-level">A-Level</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select id="userClass">
+                        <option value="">Select Level First</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Create Account</button>
+            </div>
+        </form>
+    `;
+
+  showModal("Add New User/Staff", content, () => {
+    // Initial display toggle
+    const roleSelect = document.getElementById("userRole");
+    const studentFields = document.getElementById("studentFields");
+    if (roleSelect && studentFields) {
+      studentFields.style.display = roleSelect.value === "student" ? "block" : "none";
+      roleSelect.addEventListener("change", () => {
+        studentFields.style.display = roleSelect.value === "student" ? "block" : "none";
+      });
+    }
+
+    const levelSelect = document.getElementById("userLevel");
+    if (levelSelect) {
+      levelSelect.addEventListener("change", () => updateClassSelect("userLevel", "userClass"));
+    }
+
+    document.getElementById("userForm").addEventListener("submit", saveUser);
+  });
+}
+
+async function saveUser(e) {
+  e.preventDefault();
+  const schoolVal = document.getElementById("userSchool")?.value;
+  const data = {
+    name: document.getElementById("userName").value,
+    email: document.getElementById("userEmail").value,
+    password: document.getElementById("userPassword").value,
+    role: document.getElementById("userRole").value,
+    schoolId: schoolVal === "system" ? null : schoolVal,
+    level: document.getElementById("userLevel")?.value || null,
+    class: document.getElementById("userClass")?.value || null,
+    isConfirmed: true, // Manually added users are pre-confirmed
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/users`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || "Failed to create user");
+    }
+
+    showSuccess("User account created successfully");
+    closeModal();
+    loadStudents();
+    loadDashboard();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
 function setupStudentsListeners() {
   const studentFilter = document.getElementById("studentFilter");
   if (studentFilter) {
     studentFilter.addEventListener("change", filterStudents);
-  } else {
-    console.error("studentFilter element not found");
   }
 
-  // Event delegation for student actions (already set up globally, but ensure it works)
-  // Note: Event delegation is handled at document level, so it should work
+  const addUserBtn = document.getElementById("addUserBtn");
+  if (addUserBtn) {
+    addUserBtn.addEventListener("click", showAddUserModal);
+  }
 }
 
 async function loadStudents() {
@@ -472,14 +653,16 @@ async function loadStudents() {
 
 function filterStudents() {
   const filter = document.getElementById("studentFilter").value;
-  let filtered = allStudents.filter((s) => s.role === "student");
+  let filtered = allStudents;
 
-  if (filter === "pending") {
-    filtered = filtered.filter((s) => !s.isConfirmed);
-  } else if (filter === "confirmed") {
-    filtered = filtered.filter((s) => s.isConfirmed);
-  } else if (filter === "inactive") {
-    filtered = filtered.filter((s) => !s.isActive);
+  if (filter === "student") {
+    filtered = allStudents.filter((s) => s.role === "student");
+  } else if (filter === "teacher") {
+    filtered = allStudents.filter((s) => s.role === "teacher");
+  } else if (filter === "school_admin") {
+    filtered = allStudents.filter((s) => s.role === "school_admin");
+  } else if (filter === "pending") {
+    filtered = allStudents.filter((s) => !s.isConfirmed);
   }
 
   displayStudents(filtered);
@@ -490,18 +673,23 @@ function displayStudents(students) {
 
   if (students.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="6" class="no-data">No students found</td></tr>';
+      '<tr><td colspan="6" class="no-data">No users found</td></tr>';
     return;
   }
 
   tbody.innerHTML = students
     .map(
-      (student) => `
+      (student) => {
+        const studentSchool = allSchools.find(sch => sch.id === student.schoolId);
+        return `
         <tr>
             <td>${student.name}</td>
             <td>${student.email}</td>
-            <td>${student.class || "-"}</td>
-            <td>${student.level || "-"}</td>
+            <td><span class="badge badge-info">${student.role.toUpperCase()}</span></td>
+            <td>
+                ${student.class || "-"} ${student.level ? `(${student.level})` : ""}
+                <br><small style="color: #666; font-weight: 500;">🏫 ${studentSchool ? studentSchool.name : 'Master-Admin'}</small>
+            </td>
             <td>
                 <span class="badge ${student.isConfirmed ? "badge-success" : "badge-warning"}">
                     ${student.isConfirmed ? "Confirmed" : "Pending"}
@@ -515,8 +703,7 @@ function displayStudents(students) {
                 <button class="btn-sm btn-danger delete-student-btn" data-student-id="${student.id}">Delete</button>
             </td>
         </tr>
-    `,
-    )
+    `})
     .join("");
 }
 
@@ -631,6 +818,7 @@ async function viewStudent(id) {
             ${student.stream ? `<p><strong>Stream:</strong> ${student.stream}</p>` : ""}
             ${student.combination ? `<p><strong>Combination:</strong> ${student.combination}</p>` : ""}
             <p><strong>Status:</strong> ${student.isConfirmed ? "Confirmed" : "Pending Approval"}</p>
+            <p><strong>School:</strong> ${student.school ? student.school.name : (allSchools.find(s => s.id === student.schoolId)?.name || "Master-Admin")}</p>
             <p><strong>Active:</strong> ${student.isActive ? "Yes" : "No"}</p>
             <p><strong>Registered:</strong> ${new Date(student.createdAt).toLocaleDateString()}</p>
         </div>
@@ -1590,7 +1778,7 @@ function showResourceModal(title, resource) {
                 <label>Type *</label>
                 <select id="resourceType" required>
                     <option value="url" ${resource && resource.resourceType === "url" ? "selected" : ""}>Web Link (URL)</option>
-                    <option value="file" ${resource && resource.resourceType === "file" ? "selected" : ""}>File Upload (MP4, PDF, etc)</option>
+                    <option value="file" ${resource && resource.resourceType === "file" ? "selected" : ""}>File Upload (MP4, PDF, JPG, PNG, etc)</option>
                 </select>
             </div>
             <div class="form-group" id="resourceUrlGroup" style="${resource && resource.resourceType === "file" ? "display:none" : "display:block"}">
@@ -1598,8 +1786,8 @@ function showResourceModal(title, resource) {
                 <input type="text" id="resourceUrl" value="${resource && resource.url ? resource.url : ""}" ${resource && resource.resourceType === "file" ? "" : "required"}>
             </div>
             <div class="form-group" id="resourceFileGroup" style="${resource && resource.resourceType === "file" ? "display:block" : "display:none"}">
-                <label>Resource File (MP4 Video, PDF, DOC) ${resource && resource.resourceType === "file" ? "(Optional update)" : "*"}</label>
-                <input type="file" id="resourceFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4" ${resource ? "" : (resource && resource.resourceType === "file" ? "" : "")}>
+                <label>Resource File (MP4 Video, PDF, DOC, JPG, PNG) ${resource && resource.resourceType === "file" ? "(Optional update)" : "*"}</label>
+                <input type="file" id="resourceFile" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.jpg,.jpeg,.png" ${resource ? "" : (resource && resource.resourceType === "file" ? "" : "")}>
             </div>
             <div class="form-group">
                 <label>Subject</label>
@@ -1945,7 +2133,13 @@ async function refreshCurrentTab() {
   btn.disabled = true;
 
   try {
+    // If super admin, always refresh the schools cache on any sync
+    if (currentAdmin.role === "super_admin") {
+      await loadSchools();
+    }
+
     if (currentTab === "dashboard") await loadDashboard();
+    else if (currentTab === "schools") await loadSchools(); // Already handled above but kept for consistency
     else if (currentTab === "students") await loadStudents();
     else if (currentTab === "subjects") await loadSubjects();
     else if (currentTab === "notes") await loadNotes();
@@ -2097,7 +2291,431 @@ async function resetStudentPassword(id, name) {
     loadResetRequests();
     loadDashboard();
   } catch (error) {
-    console.error("Failed to reset password:", error);
     showError(error.message || "Failed to reset password");
+  }
+}
+
+// ============================================
+// SYSTEM ACTIVATION
+// ============================================
+
+function renderActivationTab() {
+  return `
+        <div id="activation" class="tab-content">
+            <div class="section-header">
+                <h2>System Activation & License</h2>
+                <div class="badge-container" id="activationStatusBadge">
+                    <span class="badge badge-warning">Checking Status...</span>
+                </div>
+            </div>
+
+            <div class="activation-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div class="activation-card" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                    <h3>License Information</h3>
+                    <div id="licenseInfo" style="margin-top: 1.5rem;">
+                        <p>Loading details...</p>
+                    </div>
+                </div>
+
+                <div class="activation-card" id="activationFormContainer" style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: none;">
+                    <h3>Enter Activation Key</h3>
+                    <p style="color: #666; margin-bottom: 1.5rem; font-size: 0.9rem;">Please enter the activation key provided by your distributor.</p>
+                    <form id="activationForm">
+                        <div class="form-group">
+                            <label>Activation Key</label>
+                            <input type="text" id="licenseKeyInput" placeholder="NSOMA-XXXXX-XXXXX" required 
+                                   style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-family: monospace; font-size: 1.1rem;">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem; padding: 12px;">Activate System</button>
+                    </form>
+                </div>
+
+                <div class="activation-card" id="activatedMessage" style="background: #e7f3ff; padding: 2rem; border-radius: 12px; border-left: 5px solid #2196f3; display: none;">
+                    <h3 style="color: #2196f3;">✅ System Activated</h3>
+                    <p style="margin-top: 1rem;">This system is licensed for full usage. No further action is required.</p>
+                </div>
+            </div>
+            
+            <div class="info-section" style="margin-top: 3rem; background: #fff8e1; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #ffc107;">
+                <h4>💡 Trial Period Terms</h4>
+                <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: #555;">
+                    <li>The system allows for a 60-day full evaluation period from the date of first installation.</li>
+                    <li>After 60 days, access to all materials will be restricted until an activation key is provided.</li>
+                    <li>Data and notes are preserved even after expiration, but remain locked until activation.</li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+async function loadActivationStatus() {
+  try {
+    const response = await fetch(`${API_BASE}/system/status`, {
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) throw new Error("Failed to load system status");
+
+    const { data } = await response.json();
+    const { isActivated, installationDate, daysRemaining } = data;
+
+    const badgeContainer = document.getElementById("activationStatusBadge");
+    const licenseInfo = document.getElementById("licenseInfo");
+    const formContainer = document.getElementById("activationFormContainer");
+    const activatedMessage = document.getElementById("activatedMessage");
+
+    if (isActivated) {
+      badgeContainer.innerHTML = '<span class="badge badge-success" style="padding: 8px 15px; font-size: 1rem;">ACTIVE (Full Version)</span>';
+      licenseInfo.innerHTML = `
+                <div style="margin-bottom: 1rem;"><strong style="color: #555;">Status:</strong> <span style="color: #28a745; font-weight: bold;">Full License</span></div>
+                <div style="margin-bottom: 1rem;"><strong style="color: #555;">Activated On:</strong> ${new Date().toLocaleDateString()}</div>
+                <div><strong style="color: #555;">Expiration:</strong> <span style="color: #28a745;">Perpetual / Lifetime</span></div>
+            `;
+      activatedMessage.style.display = "block";
+      formContainer.style.display = "none";
+    } else {
+      const isExpired = daysRemaining <= 0;
+      badgeContainer.innerHTML = `<span class="badge ${isExpired ? "badge-danger" : "badge-warning"}" style="padding: 8px 15px; font-size: 1rem;">${isExpired ? "EXPIRED" : "TRIAL MODE"}</span>`;
+
+      licenseInfo.innerHTML = `
+                <div style="margin-bottom: 1rem;"><strong style="color: #555;">Installation Date:</strong> ${new Date(installationDate).toLocaleDateString()}</div>
+                <div style="margin-bottom: 1rem;"><strong style="color: #555;">Status:</strong> <span style="color: ${isExpired ? "#d63031" : "#e67e22"}; font-weight: bold;">${isExpired ? "Expired" : "Active Trial"}</span></div>
+                <div style="margin-bottom: 1rem;"><strong style="color: #555;">Days Remaining:</strong> <span style="font-size: 1.5rem; font-weight: bold; color: ${isExpired ? "#d63031" : "#28a745"};">${daysRemaining}</span></div>
+            `;
+      formContainer.style.display = "block";
+      activatedMessage.style.display = "none";
+
+      // Setup form listener
+      const form = document.getElementById("activationForm");
+      if (form) {
+        form.addEventListener("submit", activateSystem);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading activation status:", error);
+    showError("Failed to load activation data");
+  }
+}
+
+async function activateSystem(e) {
+  e.preventDefault();
+  const key = document.getElementById("licenseKeyInput").value.trim();
+
+  if (!key) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/system/activate`, {
+      method: "POST",
+      headers: {
+        ...getAuthHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ licenseKey: key })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      showSuccess(data.message || "System activated successfully!");
+      loadActivationStatus();
+      loadDashboard();
+    } else {
+      showError(data.message || "Invalid activation key. Please check and try again.");
+    }
+  } catch (error) {
+    console.error("Activation failed:", error);
+    showError("An error occurred during activation.");
+  }
+}
+// ============================================
+// SCHOOLS MANAGEMENT (SUPER ADMIN ONLY)
+// ============================================
+
+function renderSchoolsTab() {
+  return `
+        <div id="schools" class="tab-content">
+            <div class="section-header">
+                <h2>Platform Management - Schools</h2>
+                <button class="btn-primary" id="addSchoolBtn">+ Onboard New School</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>School Name</th>
+                            <th>Slug/Domain</th>
+                            <th>Activation Status</th>
+                            <th>Subscription Ends</th>
+                            <th>Features</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schoolsTableBody">
+                        <tr><td colspan="6" class="loading">Loading schools...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section-header" style="margin-top: 3rem;">
+                <h2>Offline License Generator</h2>
+            </div>
+            <div class="stat-card" style="max-width: 500px;">
+                <p>Generate activation keys for offline laboratory installations.</p>
+                <div class="form-group">
+                    <label>Duration (Days)</label>
+                    <select id="licenseDuration">
+                        <option value="365">1 Year (365 Days)</option>
+                        <option value="730">2 Years (730 Days)</option>
+                        <option value="9999">Lifetime (Perpetual)</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="genLicenseBtn">Generate Key</button>
+                <div id="generatedKeyDisplay" style="margin-top: 1rem; font-family: monospace; font-size: 1.2rem; color: #2196f3; font-weight: bold;"></div>
+            </div>
+        </div>
+    `;
+}
+
+function setupSchoolsListeners() {
+  const addBtn = document.getElementById("addSchoolBtn");
+  if (addBtn) addBtn.addEventListener("click", showAddSchoolModal);
+
+  const genBtn = document.getElementById("genLicenseBtn");
+  if (genBtn) genBtn.addEventListener("click", generateLicenseKey);
+}
+
+async function loadSchools() {
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    const schools = data.data || [];
+    allSchools = schools; // Update global cache for user creation dropdown
+    console.log(`[SUPER-ADMIN] Schools list refreshed: ${allSchools.length} schools loaded.`);
+
+    const tbody = document.getElementById("schoolsTableBody");
+    if (schools.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="no-data">No schools onboarded yet.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = schools
+      .map(
+        (s) => `
+        <tr>
+            <td><strong>${s.name}</strong></td>
+            <td><code>${s.slug}</code></td>
+            <td>
+                <span class="badge ${s.isActive ? "badge-success" : "badge-danger"}">
+                    ${s.isActive ? "ACTIVE" : "SUSPENDED"}
+                </span>
+            </td>
+            <td>${s.subscriptionExpiresAt ? new Date(s.subscriptionExpiresAt).toLocaleDateString() : "No Expiry"}</td>
+            <td>
+                <span class="badge ${s.isSaaS ? "badge-info" : "badge-secondary"}">
+                    ${s.isSaaS ? "Cloud / SaaS" : "Standalone Lab"}
+                </span>
+            </td>
+            <td>
+                <button class="btn-sm ${s.isActive ? "btn-danger" : "btn-success"}" onclick="toggleSchoolStatus('${s.id}', ${s.isActive})">
+                    ${s.isActive ? "Suspend" : "Restore"}
+                </button>
+                <button class="btn-sm btn-primary" onclick="showAddUserModal('${s.id}')">Add Admin</button>
+                <button class="btn-sm btn-info" onclick="showRevenueModal('${s.id}', '${s.name}')">💰 Revenue</button>
+                <button class="btn-sm btn-danger" onclick="deleteSchool('${s.id}', '${s.name}')">🗑 Delete</button>
+            </td>
+        </tr>
+    `,
+      )
+      .join("");
+  } catch (e) {
+    showError("Failed to load schools");
+  }
+}
+
+function showAddSchoolModal() {
+  const content = `
+        <form id="schoolForm">
+            <div class="form-group">
+                <label>School Name *</label>
+                <input type="text" id="schName" placeholder="e.g. Makerere College School" required>
+            </div>
+            <div class="form-group">
+                <label>Slug (Subdomain) *</label>
+                <input type="text" id="schSlug" placeholder="e.g. makerere-college" required>
+            </div>
+            <div class="form-group">
+                <label>Deployment Mode</label>
+                <select id="schMode">
+                    <option value="saas">Cloud SaaS (Multi-tenant)</option>
+                    <option value="standalone">Standalone Lab (Single-school)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Initial Subscription Days (365 default)</label>
+                <input type="number" id="schDays" value="365">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Provision School</button>
+            </div>
+        </form>
+    `;
+  showModal("Onboard New School", content, () => {
+    document.getElementById("schoolForm").addEventListener("submit", saveSchool);
+  });
+}
+
+async function saveSchool(e) {
+  e.preventDefault();
+  const data = {
+    name: document.getElementById("schName").value,
+    slug: document.getElementById("schSlug").value,
+    isSaaS: document.getElementById("schMode").value === "saas",
+    subscriptionDays: parseInt(document.getElementById("schDays").value) || 365,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.message || "Failed to provision school");
+    }
+
+    showSuccess("School onboarded successfully");
+    closeModal();
+    await loadSchools();
+    await loadDashboard();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function toggleSchoolStatus(id, currentStatus) {
+  const action = currentStatus ? "SUSPEND" : "RESTORE";
+  if (!confirm(`Are you sure you want to ${action} this school?`)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools/${id}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ isActive: !currentStatus }),
+    });
+
+    if (!res.ok) throw new Error("Failed to update school status");
+    showSuccess(`School ${action === "SUSPEND" ? "suspended (Kill Switch activated)" : "restored"}`);
+    loadSchools();
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+async function deleteSchool(id, name) {
+  if (!confirm(`⚠️ PERMANENTLY DELETE "${name}"?\n\nThis cannot be undone.`)) return;
+  const confirmName = prompt(`Type the school name exactly to confirm:\n"${name}"`);
+  if (confirmName !== name) { showError("Name did not match. Deletion cancelled."); return; }
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools/${id}`, { method: "DELETE", headers: getAuthHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Failed to delete school");
+    showSuccess(data.message || `School "${name}" deleted.`);
+    await loadSchools(); await loadDashboard();
+  } catch (err) { showError(err.message); }
+}
+
+let revenueChartInstance = null;
+
+async function showRevenueModal(schoolId, schoolName) {
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools/${schoolId}/revenue`, { headers: getAuthHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    const d = data.data;
+    const content = `
+      <div>
+        <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;">${d.totalStudents}</div><div style="font-size:.75rem;">Total Students</div></div>
+          <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;">${d.confirmedStudents}</div><div style="font-size:.75rem;">Confirmed</div></div>
+          <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#f7971e,#ffd200);color:#fff;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1.8rem;font-weight:700;">${d.pendingStudents}</div><div style="font-size:.75rem;">Pending</div></div>
+          <div style="flex:1;min-width:120px;background:linear-gradient(135deg,#fc4a1a,#f7b733);color:#fff;border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:1rem;font-weight:700;">UGX ${d.expectedRevenue.toLocaleString()}</div><div style="font-size:.75rem;">Expected Revenue</div></div>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start;">
+          <div style="flex:1;min-width:180px;"><canvas id="revenueChart" width="200" height="200"></canvas></div>
+          <div style="flex:2;min-width:200px;">
+            <h4>💰 Fee Per Student (UGX)</h4>
+            <p style="color:#666;font-size:.82rem;">Only <strong>students</strong> are charged. Teachers and admins are excluded from billing.</p>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <input type="number" id="feeInput" value="${d.feePerStudent}" min="0" style="flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;">
+              <button onclick="saveSchoolFee('${schoolId}')" class="btn-primary" style="padding:8px 14px;">Save</button>
+            </div>
+            <p style="margin-top:10px;color:#888;font-size:.8rem;">
+              UGX <span id="feePreview">${d.feePerStudent.toLocaleString()}</span> × ${d.totalStudents} students = <strong id="totalPreview">UGX ${d.expectedRevenue.toLocaleString()}</strong>
+            </p>
+          </div>
+        </div>
+      </div>`;
+    showModal(`💰 Revenue — ${schoolName}`, content, () => {
+      const ctx = document.getElementById("revenueChart");
+      if (!ctx) return;
+      if (revenueChartInstance) revenueChartInstance.destroy();
+      revenueChartInstance = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: ["Confirmed", "Pending"],
+          datasets: [{ data: [d.confirmedStudents || 0, d.pendingStudents || 0], backgroundColor: ["#11998e", "#f7971e"], borderWidth: 3, borderColor: "#fff" }]
+        },
+        options: { responsive: false, plugins: { legend: { position: "bottom" } } }
+      });
+      const feeInput = document.getElementById("feeInput");
+      if (feeInput) {
+        feeInput.addEventListener("input", () => {
+          const fee = parseInt(feeInput.value) || 0;
+          document.getElementById("feePreview").textContent = fee.toLocaleString();
+          document.getElementById("totalPreview").textContent = `UGX ${(fee * d.totalStudents).toLocaleString()}`;
+        });
+      }
+    });
+  } catch (err) { showError("Could not load revenue data: " + err.message); }
+}
+
+async function saveSchoolFee(schoolId) {
+  const feeInput = document.getElementById("feeInput");
+  const fee = parseInt(feeInput.value);
+  if (isNaN(fee) || fee < 0) return showError("Please enter a valid fee amount.");
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/schools/${schoolId}/fee`, {
+      method: "PUT", headers: getAuthHeaders(), body: JSON.stringify({ feePerStudent: fee })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+    showSuccess(data.message || "Fee updated!");
+  } catch (err) { showError(err.message); }
+}
+
+async function generateLicenseKey() {
+  const days = document.getElementById("licenseDuration").value;
+  try {
+    const res = await fetch(`${API_BASE}/super-admin/license`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ days: parseInt(days) }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById("generatedKeyDisplay").textContent = data.data.licenseKey;
+      showSuccess("License key generated!");
+    }
+  } catch (e) {
+    showError("Failed to generate license key");
   }
 }

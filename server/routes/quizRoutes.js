@@ -20,7 +20,7 @@ router.get("/:id", protect, getQuiz);
 router.post(
   "/",
   protect,
-  authorize("admin"),
+  authorize("school_admin", "teacher", "admin"),
   upload.single("file"),
   handleUploadError,
   createQuiz,
@@ -29,12 +29,17 @@ router.post(
 router.put(
   "/:id",
   protect,
-  authorize("admin"),
+  authorize("school_admin", "teacher", "admin"),
   upload.single("file"),
   handleUploadError,
   updateQuiz,
 );
 
-router.delete("/:id", protect, authorize("admin"), deleteQuiz);
+router.delete(
+  "/:id",
+  protect,
+  authorize("school_admin", "teacher", "admin"),
+  deleteQuiz,
+);
 
 module.exports = router;

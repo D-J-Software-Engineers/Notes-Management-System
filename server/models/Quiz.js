@@ -103,6 +103,14 @@ const Quiz = sequelize.define(
         key: "id",
       },
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "quizzes",
@@ -121,8 +129,6 @@ const Quiz = sequelize.define(
     ],
   },
 );
-
-Quiz.belongsTo(User, { foreignKey: "uploadedById", as: "uploadedBy" });
 
 Quiz.prototype.incrementDownloads = async function () {
   this.downloads += 1;

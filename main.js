@@ -3,18 +3,38 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
-// Load baked-in keys from config/keys.js
+if (!app) {
+  console.error(
+    "\n[Error] main.js must be executed by Electron (`electron .`) rather than Node.js.",
+  );
+  console.error(
+    "If you are running `npm run dev`, it is because `nodemon` cannot find `server/server.js` and fell back to `main.js`.",
+  );
+  console.error("Please restore the missing `server` directory.\n");
+  process.exit(1);
+}
+
+// Load keys from external .env or baked-in fallback
+const dotenv = require("dotenv");
+if (app.isPackaged) {
+  // Look for .env file in the same directory as the executable
+  dotenv.config({ path: path.join(path.dirname(process.execPath), ".env") });
+} else {
+  dotenv.config();
+}
+
 const bakedKeys = require("./server/config/keys");
-if (bakedKeys.OPENAI_API_KEY)
+// Prioritize environment variables (.env) over baked-in keys
+if (!process.env.OPENAI_API_KEY && bakedKeys.OPENAI_API_KEY)
   process.env.OPENAI_API_KEY = bakedKeys.OPENAI_API_KEY;
-if (bakedKeys.GEMINI_API_KEY)
+if (!process.env.GEMINI_API_KEY && bakedKeys.GEMINI_API_KEY)
   process.env.GEMINI_API_KEY = bakedKeys.GEMINI_API_KEY;
 
 // Set up paths for production (all-users shared DB on Windows)
 const isDev = !app.isPackaged;
 const programDataRoot =
   process.env.PROGRAMDATA || path.join(os.homedir(), "AppData", "Local");
-const sharedDataPath = path.join(programDataRoot, "Nsoma-DigLibs");
+const sharedDataPath = path.join(programDataRoot, "Nsoma-DigiLib");
 if (!fs.existsSync(sharedDataPath)) {
   fs.mkdirSync(sharedDataPath, { recursive: true });
 }
@@ -28,13 +48,26 @@ const isRemoteServer =
   !serverUrl.startsWith("http://127.0.0.1") &&
   !serverUrl.startsWith("https://localhost");
 
+// Function to get bundled resources whether packaged or in development
+const getResourcePath = (filename) => {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, filename)
+    : path.join(__dirname, filename);
+};
+
 // Ensure database exists in writable location
 if (!fs.existsSync(dbPath)) {
-  const templatePath = path.join(__dirname, "database.sqlite");
+  const templatePath = getResourcePath("database.sqlite");
   if (fs.existsSync(templatePath)) {
     try {
       fs.copyFileSync(templatePath, dbPath);
       console.log("Database copied successfully to shared path");
+
+      const walPath = getResourcePath("database.sqlite-wal");
+      if (fs.existsSync(walPath)) fs.copyFileSync(walPath, dbPath + "-wal");
+
+      const shmPath = getResourcePath("database.sqlite-shm");
+      if (fs.existsSync(shmPath)) fs.copyFileSync(shmPath, dbPath + "-shm");
     } catch (e) {
       console.error("Failed to copy database template", e);
     }
@@ -52,14 +85,28 @@ process.env.PORT = "5000";
 let uploadsPath;
 try {
   const userDataUploads = path.join(app.getPath("userData"), "uploads");
+  const isFirstTime = !fs.existsSync(userDataUploads);
   fs.mkdirSync(userDataUploads, { recursive: true });
   console.log(`Created/verified userData uploads dir at ${userDataUploads}`);
+
+  if (isFirstTime) {
+    const templateUploads = getResourcePath("uploads");
+    if (fs.existsSync(templateUploads)) {
+      try {
+        fs.cpSync(templateUploads, userDataUploads, { recursive: true });
+        console.log("Successfully copied existing uploads to userData");
+      } catch (cpErr) {
+        console.error("Failed to copy bundled uploads:", cpErr);
+      }
+    }
+  }
+
   uploadsPath = userDataUploads;
 } catch (err) {
   console.warn(
     `Unable to create userData uploads dir: ${err.message}. Falling back to temp directory.`,
   );
-  const tempUploads = path.join(os.tmpdir(), "Nsoma-DigLibs", "uploads");
+  const tempUploads = path.join(os.tmpdir(), "Nsoma-DigiLib", "uploads");
   fs.mkdirSync(tempUploads, { recursive: true });
   console.log(`Created/verified temp uploads dir at ${tempUploads}`);
   uploadsPath = tempUploads;
@@ -77,7 +124,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    title: "Nsoma-DigLibs",
+    title: "Nsoma DigiLib",
     icon: path.join(
       __dirname,
       "client",

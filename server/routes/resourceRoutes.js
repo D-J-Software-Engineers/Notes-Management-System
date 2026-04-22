@@ -17,11 +17,21 @@ router.get("/:id/download", protect, downloadResource);
 router.post(
   "/",
   protect,
-  authorize("admin"),
+  authorize("school_admin", "teacher", "admin"),
   upload.single("file"),
   createResource,
 );
-router.put("/:id", protect, authorize("admin"), updateResource);
-router.delete("/:id", protect, authorize("admin"), deleteResource);
+router.put(
+  "/:id",
+  protect,
+  authorize("school_admin", "teacher", "admin"),
+  updateResource,
+);
+router.delete(
+  "/:id",
+  protect,
+  authorize("school_admin", "teacher", "admin"),
+  deleteResource,
+);
 
 module.exports = router;

@@ -92,6 +92,14 @@ const Resource = sequelize.define(
         key: "id",
       },
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "resources",
@@ -103,7 +111,5 @@ const Resource = sequelize.define(
     ],
   },
 );
-
-Resource.belongsTo(User, { foreignKey: "addedById", as: "addedBy" });
 
 module.exports = Resource;

@@ -1,6 +1,6 @@
-# Nsoma DigLibs — Notes Management System
+# Nsoma DigiLib
 
-A **serverless, offline-first Notes Management System** built for Ugandan schools following the **UNEB curriculum** (O-Level & A-Level). Runs as a native desktop app on **Windows** and a native mobile app on **Android** — no internet, no server setup required.
+A **serverless, offline-first Nsoma DigiLib** built for Ugandan schools following the **UNEB curriculum** (O-Level & A-Level). Runs as a native desktop app on **Windows** and a native mobile app on **Android** — no internet, no server setup required.
 
 ---
 

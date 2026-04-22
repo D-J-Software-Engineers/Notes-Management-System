@@ -49,10 +49,18 @@ exports.protect = async (req, res, next) => {
 // ✅ ROLE-BASED AUTHORIZATION
 exports.authorize = (...roles) => {
   return (req, res, next) => {
+    if (req.user && req.user.role === "super_admin") {
+      return next();
+    }
+
+    console.log(
+      `[AUTH] Access attempt: User ${req.user.id} (${req.user.role}) trying to reach route needing [${roles}]`,
+    );
+
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,
-        message: `Role ${req.user.role} is not authorized`,
+        message: `Role ${req.user.role} is not authorized to access this route. Hint: Ensure you are logged in as the master Super Admin.`,
       });
     }
     next();

@@ -2,7 +2,7 @@
 
 ## ✅ What Has Been Implemented
 
-Your Notes Management System is now configured to build an Android APK that can access data from a Windows server via local network, **even when the main application is not running**.
+Your Nsoma DigiLib is now configured to build an Android APK that can access data from a Windows server via local network, **even when the main application is not running**.
 
 ---
 
@@ -12,7 +12,7 @@ Your Notes Management System is now configured to build an Android APK that can 
 ┌──────────────────────────────────────────────────────────┐
 │                    Android Device                         │
 │  ┌────────────────────────────────────────────────────┐  │
-│  │ Nsoma-DigLibs App                                  │  │
+│  │ Nsoma DigiLib App                                   │  │
 │  │ - Auto-discovers local server                      │  │
 │  │ - Connects via HTTP (Port 5000)                    │  │
 │  │ - Works offline with cached data                   │  │
@@ -27,7 +27,7 @@ Your Notes Management System is now configured to build an Android APK that can 
 ┌──────────────────▼──────────────────────────────────────┐
 │            Windows Server Machine                       │
 │  ┌────────────────────────────────────────────────────┐ │
-│  │ Windows Service: NotesManagementServer             │ │
+│  │ Windows Service: NsomaDigiLibServer                 │ │
 │  │ - Always Running (even without GUI)                │ │
 │  │ - Port: 5000                                       │ │
 │  │ - Auto-starts on system boot                       │ │
@@ -322,8 +322,8 @@ adb install android/app/build/outputs/apk/release/app-release.apk
 
 ```javascript
 {
-  name: 'NotesManagementServer',
-  description: 'Notes Management System Server',
+  name: 'NsomaDigiLibServer',
+  description: 'Nsoma DigiLib Server',
   script: 'server/server.js',
   nodeOptions: '--max-old-space-size=4096',
   env: { NODE_ENV: 'production', PORT: 5000 }

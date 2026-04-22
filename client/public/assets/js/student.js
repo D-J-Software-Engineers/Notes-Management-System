@@ -26,7 +26,8 @@ class AdminStudents {
     const token = localStorage.getItem("token");
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-    if (!token || user.role !== "admin") {
+    const adminRoles = ["admin", "super_admin", "school_admin", "teacher"];
+    if (!token || !adminRoles.includes(user.role)) {
       window.location.href = "/pages/login.html";
       return false;
     }
@@ -199,8 +200,8 @@ class AdminStudents {
                     </thead>
                     <tbody>
                         ${state.students
-                          .map(
-                            (student) => `
+        .map(
+          (student) => `
                             <tr>
                                 <td>${student.name}</td>
                                 <td>${student.email}</td>
@@ -208,34 +209,31 @@ class AdminStudents {
                                 <td><span class="badge bg-secondary">${student.class?.toUpperCase() || "-"}</span></td>
                                 <td>${student.combination || "-"}</td>
                                 <td>
-                                    ${
-                                      student.isConfirmed
-                                        ? '<span class="badge bg-success">Confirmed</span>'
-                                        : '<span class="badge bg-warning">Pending</span>'
-                                    }
-                                    ${
-                                      student.isActive
-                                        ? '<span class="badge bg-success">Active</span>'
-                                        : '<span class="badge bg-danger">Inactive</span>'
-                                    }
+                                    ${student.isConfirmed
+              ? '<span class="badge bg-success">Confirmed</span>'
+              : '<span class="badge bg-warning">Pending</span>'
+            }
+                                    ${student.isActive
+              ? '<span class="badge bg-success">Active</span>'
+              : '<span class="badge bg-danger">Inactive</span>'
+            }
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-info" onclick="adminStudents.viewStudent('${student.id}')">
                                         View
                                     </button>
-                                    ${
-                                      !student.isActive
-                                        ? `<button class="btn btn-sm btn-success" onclick="adminStudents.activateStudent('${student.id}')">Activate</button>`
-                                        : `<button class="btn btn-sm btn-warning" onclick="adminStudents.deactivateStudent('${student.id}')">Deactivate</button>`
-                                    }
+                                    ${!student.isActive
+              ? `<button class="btn btn-sm btn-success" onclick="adminStudents.activateStudent('${student.id}')">Activate</button>`
+              : `<button class="btn btn-sm btn-warning" onclick="adminStudents.deactivateStudent('${student.id}')">Deactivate</button>`
+            }
                                     <button class="btn btn-sm btn-danger" onclick="adminStudents.deleteStudent('${student.id}')">
                                         Delete
                                     </button>
                                 </td>
                             </tr>
                         `,
-                          )
-                          .join("")}
+        )
+        .join("")}
                     </tbody>
                 </table>
             </div>
@@ -276,8 +274,8 @@ class AdminStudents {
                     </thead>
                     <tbody>
                         ${state.pendingStudents
-                          .map(
-                            (student) => `
+        .map(
+          (student) => `
                             <tr>
                                 <td>${student.name}</td>
                                 <td>${student.email}</td>
@@ -295,8 +293,8 @@ class AdminStudents {
                                 </td>
                             </tr>
                         `,
-                          )
-                          .join("")}
+        )
+        .join("")}
                     </tbody>
                 </table>
             </div>

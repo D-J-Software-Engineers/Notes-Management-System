@@ -1,12 +1,12 @@
 {
-  "name": "Nsoma DigLibs",
+  "name": "Nsoma DigiLib",
   "short_name": "NsomaDL",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#4a90e2",
-  "description": "Nsoma DigLibs - Digital Library and Notes Management System",
+  "description": "Nsoma DigiLib - Digital Library",
   "lang": "en",
   "icons": [
     {

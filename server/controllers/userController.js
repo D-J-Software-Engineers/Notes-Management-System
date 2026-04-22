@@ -93,6 +93,7 @@ exports.createUser = async (req, res, next) => {
       email,
       password,
       role,
+      schoolId,
       class: classLevel,
       level,
       combination,
@@ -103,9 +104,11 @@ exports.createUser = async (req, res, next) => {
       email,
       password,
       role: role || "student",
+      schoolId: schoolId || req.user.schoolId, // Use provided schoolId or current admin's school
       class: classLevel,
       level,
       combination,
+      isConfirmed: req.body.isConfirmed || false,
     });
 
     res.status(201).json({
@@ -126,6 +129,8 @@ exports.updateUser = async (req, res, next) => {
     const {
       name,
       email,
+      role,
+      schoolId,
       class: classLevel,
       level,
       combination,
@@ -142,6 +147,8 @@ exports.updateUser = async (req, res, next) => {
     // Update fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (role) user.role = role;
+    if (schoolId !== undefined) user.schoolId = schoolId;
     if (classLevel) user.class = classLevel;
     if (level) user.level = level;
     if (combination) user.combination = combination;

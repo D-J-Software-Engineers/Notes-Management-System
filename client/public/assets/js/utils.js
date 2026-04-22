@@ -131,5 +131,14 @@ async function authFetch(url, options = {}, { redirect = true } = {}) {
       window.location.href = getLoginRedirectUrl();
     }
   }
+
+  // Trial Expired check
+  if (res.status === 503 && !window.location.pathname.includes("expired.html")) {
+    const data = await res.clone().json().catch(() => ({}));
+    if (data.code === "TRIAL_EXPIRED" || data.message === "Trial Period Expired") {
+      window.location.href = "/pages/expired.html";
+    }
+  }
+
   return res;
 }

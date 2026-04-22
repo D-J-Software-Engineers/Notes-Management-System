@@ -31,6 +31,14 @@ const ClassStream = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "class_streams",

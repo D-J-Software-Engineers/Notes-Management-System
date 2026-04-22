@@ -51,6 +51,14 @@ const Subject = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "subjects",
@@ -58,7 +66,7 @@ const Subject = sequelize.define(
     indexes: [
       {
         unique: true,
-        fields: ["name", "level", "class"],
+        fields: ["name", "level", "class", "schoolId"],
         name: "subjects_unique_composite",
       },
     ],

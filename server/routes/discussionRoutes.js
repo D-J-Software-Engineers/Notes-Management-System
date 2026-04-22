@@ -15,6 +15,11 @@ router.post("/", protect, createDiscussion);
 router.put("/:id/publication", protect, addPublication);
 
 // Admin exclusive routes
-router.put("/:id/status", protect, authorize("admin"), updateStatus);
+router.put(
+  "/:id/status",
+  protect,
+  authorize("admin", "school_admin", "teacher"),
+  updateStatus,
+);
 
 module.exports = router;

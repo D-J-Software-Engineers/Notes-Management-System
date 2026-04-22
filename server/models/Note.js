@@ -91,6 +91,14 @@ const Note = sequelize.define(
         key: "id",
       },
     },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: "schools",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "notes",
@@ -107,8 +115,6 @@ const Note = sequelize.define(
     ],
   },
 );
-
-Note.belongsTo(User, { foreignKey: "uploadedById", as: "uploadedBy" });
 
 Note.prototype.incrementDownloads = async function () {
   this.downloads += 1;

@@ -1,162 +1,115 @@
+const { connectDB } = require("../config/db");
 const User = require("../models/User");
 const Subject = require("../models/Subject");
-const { ALEVEL_COMBINATIONS, OLEVEL_SUBJECTS } = require("../config/config");
+const School = require("../models/School");
+const {
+  ALEVEL_COMBINATIONS,
+  OLEVEL_SUBJECTS,
+  ALEVEL_SUBSIDIARIES,
+} = require("../config/config");
+
+const subjectStreamMap = {
+  Physics: "science",
+  Chemistry: "science",
+  Biology: "science",
+  Mathematics: "both",
+  Geography: "both",
+  History: "arts",
+  Economics: "arts",
+  Literature: "arts",
+  Divinity: "arts",
+  Arabic: "arts",
+  Kiswahili: "arts",
+  "Religious Education": "arts",
+};
 
 const seedDatabase = async () => {
   try {
-    const adminExists = await User.findOne({ where: { role: "admin" } });
+    // CRITICAL: Ensure DB is connected and synced
+    await connectDB();
 
-    if (adminExists) {
-      console.log("Admin already exists. Skipping seed.");
-      // Still seed subjects if they don't exist
-      await seedOLevelSubjects();
-      await seedALevelSubjects();
+    // 1. Get the default system school (created by initSystem.js)
+    const systemSchool = await School.findOne({
+      where: { slug: "system-admin" },
+    });
+    if (!systemSchool) {
+      console.error(
+        "❌ System School not found. Please run initSystem.js first.",
+      );
       return;
     }
 
-    const admin = await User.create({
-      name: "System Admin",
-      email: process.env.ADMIN_EMAIL || "admin@school.com",
-      password: process.env.ADMIN_PASSWORD || "Admin@123",
-      role: "admin",
-      isConfirmed: true,
-      isActive: true,
-    });
+    const schoolId = systemSchool.id;
 
-    console.log("Admin created successfully via auto-seed");
-    console.log(`Email: ${admin.email}`);
-
-    // Seed all subjects
-    await seedOLevelSubjects();
-    await seedALevelSubjects();
-  } catch (error) {
-    console.error("Auto-seeding error:", error.message);
-  }
-};
-
-// Seed O-Level subjects for S1-S4
-const seedOLevelSubjects = async () => {
-  try {
+    // 2. Seed Subjects
+    console.log("Seeding O-Level subjects...");
     const oLevelClasses = ["s1", "s2", "s3", "s4"];
-
     for (const classLevel of oLevelClasses) {
-      for (const subject of OLEVEL_SUBJECTS) {
-        const exists = await Subject.findOne({
+      for (const subjectName of OLEVEL_SUBJECTS) {
+        await Subject.findOrCreate({
           where: {
-            name: subject,
+            name: subjectName,
             level: "o-level",
             class: classLevel,
+            schoolId,
           },
-        });
-
-        if (!exists) {
-          await Subject.create({
-            name: subject,
-            code: subject.substring(0, 3).toUpperCase(),
-            level: "o-level",
-            class: classLevel,
+          defaults: {
+            code: (subjectName || "SUB").substring(0, 3).toUpperCase(),
             isCompulsory: true,
             isActive: true,
-          });
-          console.log(`Created O-Level subject: ${subject} (${classLevel})`);
-        }
+          },
+        });
       }
     }
 
-    console.log("O-Level subjects seeded successfully");
-  } catch (error) {
-    console.error("Error seeding O-Level subjects:", error.message);
-  }
-};
-
-// Seed A-Level subjects based on ALEVEL_COMBINATIONS configuration
-const seedALevelSubjects = async () => {
-  try {
-    // Subject categorization by stream
-    const subjectStreamMap = {
-      // Science subjects
-      Physics: "science",
-      Chemistry: "science",
-      Biology: "science",
-      // Both science and arts
-      Mathematics: "both",
-      Geography: "both",
-      // Arts subjects
-      History: "arts",
-      Economics: "arts",
-      Literature: "arts",
-      Divinity: "arts",
-      Arabic: "arts",
-      Kiswahili: "arts",
-      "Religious Education": "arts",
-    };
-
-    // Extract unique subjects from combinations
-    const subjects = new Set();
+    console.log("Seeding A-Level subjects...");
+    const aLevelSubjects = new Set();
     Object.values(ALEVEL_COMBINATIONS).forEach((combo) => {
-      combo.subjects.forEach((subject) => subjects.add(subject));
+      combo.subjects.forEach((s) => aLevelSubjects.add(s));
     });
 
-    // Create subjects for S5 and S6 if they don't exist
-    for (const subject of subjects) {
-      const stream = subjectStreamMap[subject] || "both";
-
+    for (const subjectName of aLevelSubjects) {
+      const stream = subjectStreamMap[subjectName] || "both";
       for (const classLevel of ["s5", "s6"]) {
-        const exists = await Subject.findOne({
+        await Subject.findOrCreate({
           where: {
-            name: subject,
+            name: subjectName,
             level: "a-level",
             class: classLevel,
+            schoolId,
           },
-        });
-
-        if (!exists) {
-          await Subject.create({
-            name: subject,
-            code: subject.substring(0, 3).toUpperCase(),
-            level: "a-level",
-            class: classLevel,
+          defaults: {
+            code: (subjectName || "SUB").substring(0, 3).toUpperCase(),
             stream: stream,
             isCompulsory: true,
             isActive: true,
-          });
-          console.log(
-            `Created A-Level subject: ${subject} (${classLevel}, ${stream})`,
-          );
-        }
-      }
-    }
-
-    // Seed A-Level Subsidiaries
-    const { ALEVEL_SUBSIDIARIES } = require("../config/config");
-    for (const sub of ALEVEL_SUBSIDIARIES) {
-      for (const classLevel of ["s5", "s6"]) {
-        const exists = await Subject.findOne({
-          where: {
-            name: sub,
-            level: "a-level",
-            class: classLevel,
           },
         });
-
-        if (!exists) {
-          await Subject.create({
-            name: sub,
-            code: sub.substring(0, 3).toUpperCase(),
-            level: "a-level",
-            class: classLevel,
-            isSubsidiary: true,
-            isCompulsory: sub === "General Paper", // GP is compulsory
-            isActive: true,
-          });
-          console.log(`Created A-Level Subsidiary: ${sub} (${classLevel})`);
-        }
       }
     }
 
-    console.log("A-Level subjects seeded successfully");
+    for (const subName of ALEVEL_SUBSIDIARIES) {
+      for (const classLevel of ["s5", "s6"]) {
+        await Subject.findOrCreate({
+          where: {
+            name: subName,
+            level: "a-level",
+            class: classLevel,
+            schoolId,
+          },
+          defaults: {
+            code: (subName || "SUB").substring(0, 3).toUpperCase(),
+            isSubsidiary: true,
+            isCompulsory: subName === "General Paper",
+            isActive: true,
+          },
+        });
+      }
+    }
+
+    console.log("✅ Database seeding complete.");
   } catch (error) {
-    console.error("Error seeding A-Level subjects:", error.message);
+    console.error("❌ Auto-seeding error:", error.message);
   }
 };
 

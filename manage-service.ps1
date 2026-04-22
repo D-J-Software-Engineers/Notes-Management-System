@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    PowerShell Service Manager for Notes Management System Server
+    PowerShell Service Manager for Nsoma DigiLib Server
     
 .DESCRIPTION
     Provides easy management of the Windows Service for the Node.js server
@@ -27,7 +27,7 @@ function Test-AdminPrivilege {
 
 function Show-Header {
     Write-Host "`n╔════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "║  Notes Management System - Service Manager        ║" -ForegroundColor Cyan
+    Write-Host "║  Nsoma DigiLib - Service Manager               ║" -ForegroundColor Cyan
     Write-Host "╚════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 }
 

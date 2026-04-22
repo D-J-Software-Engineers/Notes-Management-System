@@ -25,7 +25,7 @@ router.get("/:id", protect, getNote);
 router.post(
   "/",
   protect,
-  authorize("admin"),
+  authorize("school_admin", "teacher", "admin"),
   upload.single("file"),
   handleUploadError,
   validateNote,
@@ -35,12 +35,17 @@ router.post(
 router.put(
   "/:id",
   protect,
-  authorize("admin"),
+  authorize("school_admin", "teacher", "admin"),
   upload.single("file"),
   handleUploadError,
   updateNote,
 );
 
-router.delete("/:id", protect, authorize("admin"), deleteNote);
+router.delete(
+  "/:id",
+  protect,
+  authorize("admin", "school_admin", "teacher"),
+  deleteNote,
+);
 
 module.exports = router;

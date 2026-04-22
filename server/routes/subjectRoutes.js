@@ -18,10 +18,10 @@ router.get("/combinations", getCombinations);
 // Protected routes (Admin only for modifications)
 router.use(protect);
 
-router.post("/", authorize("admin"), createSubject);
+router.post("/", authorize("school_admin", "teacher", "admin"), createSubject);
 router
   .route("/:id")
-  .put(authorize("admin"), updateSubject)
-  .delete(authorize("admin"), deleteSubject);
+  .put(authorize("school_admin", "teacher", "admin"), updateSubject)
+  .delete(authorize("school_admin", "teacher", "admin"), deleteSubject);
 
 module.exports = router;

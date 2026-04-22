@@ -4,7 +4,7 @@ REM This builds the Android app and generates a ready-to-install APK
 
 echo.
 echo ╔════════════════════════════════════════════════════════╗
-echo ║  Notes Management System - Android APK Builder         ║
+echo ║  Nsoma DigiLib - Android APK Builder               ║
 echo ╚════════════════════════════════════════════════════════╝
 echo.
 

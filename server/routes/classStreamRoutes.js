@@ -12,12 +12,17 @@ const { protect, authorize } = require("../middleware/auth");
 router.get("/", getAllStreams);
 
 // POST create stream (admin only)
-router.post("/", protect, authorize("admin"), createStream);
+router.post(
+  "/",
+  protect,
+  authorize("school_admin", "teacher", "admin"),
+  createStream,
+);
 
 // PUT update / DELETE remove specific stream (admin only)
 router
   .route("/:id")
-  .put(protect, authorize("admin"), updateStream)
-  .delete(protect, authorize("admin"), deleteStream);
+  .put(protect, authorize("school_admin", "teacher", "admin"), updateStream)
+  .delete(protect, authorize("school_admin", "teacher", "admin"), deleteStream);
 
 module.exports = router;

@@ -36,8 +36,16 @@ const User = sequelize.define(
       },
     },
     role: {
-      type: DataTypes.ENUM("student", "admin"),
+      type: DataTypes.ENUM("student", "teacher", "school_admin", "super_admin"),
       defaultValue: "student",
+    },
+    schoolId: {
+      type: DataTypes.UUID,
+      allowNull: true, // Null for super_admins who aren't tied to a specific school
+      references: {
+        model: "schools",
+        key: "id",
+      },
     },
     class: {
       type: DataTypes.ENUM("s1", "s2", "s3", "s4", "s5", "s6"),
@@ -128,9 +136,13 @@ User.prototype.comparePassword = async function (enteredPassword) {
 };
 
 User.prototype.generateAuthToken = function () {
-  return jwt.sign({ id: this.id, role: this.role }, JWT_CONFIG.SECRET, {
-    expiresIn: JWT_CONFIG.EXPIRE,
-  });
+  return jwt.sign(
+    { id: this.id, role: this.role, schoolId: this.schoolId },
+    JWT_CONFIG.SECRET,
+    {
+      expiresIn: JWT_CONFIG.EXPIRE,
+    },
+  );
 };
 
 User.prototype.toJSON = function () {

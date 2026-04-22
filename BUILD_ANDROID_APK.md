@@ -1,6 +1,6 @@
 # Android APK Build Guide for Local Network Server Access
 
-This guide explains how to build and deploy an Android APK that accesses the Notes Management System server running on a Windows machine via local network.
+This guide explains how to build and deploy an Android APK that accesses the Nsoma DigiLib server running on a Windows machine via local network.
 
 ## Prerequisites
 
@@ -122,7 +122,7 @@ Edit `capacitor.config.json`:
 ```json
 {
   "appId": "com.nsomadiglibs.app",
-  "appName": "Nsoma-DigLibs",
+  "appName": "Nsoma DigiLib",
   "webDir": "client/public",
   "server": {
     "androidScheme": "https",

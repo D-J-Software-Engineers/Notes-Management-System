@@ -1,5 +1,20 @@
 const express = require("express");
 const router = express.Router();
+const School = require("../models/School");
+
+// Public route to list schools for registration
+router.get("/schools", async (req, res) => {
+  try {
+    const schools = await School.findAll({
+      where: { isActive: true },
+      attributes: ["id", "name"],
+      order: [["name", "ASC"]],
+    });
+    res.status(200).json({ success: true, data: schools });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 const {
   register,
   login,

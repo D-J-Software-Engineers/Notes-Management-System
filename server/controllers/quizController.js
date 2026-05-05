@@ -143,6 +143,7 @@ exports.createQuiz = async (req, res, next) => {
       type: type || "file",
       content: content || null,
       uploadedById: req.user.id,
+      schoolId: req.user.schoolId,
     };
 
     if (

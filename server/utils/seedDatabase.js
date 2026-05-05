@@ -33,15 +33,13 @@ const seedDatabase = async () => {
       where: { slug: "system-admin" },
     });
     if (!systemSchool) {
-      console.error(
-        "❌ System School not found. Please run initSystem.js first.",
-      );
+      console.error("❌ System School not found. Please run .js first.");
       return;
     }
 
     const schoolId = systemSchool.id;
 
-    // 2. Seed Subjects
+    // 2. Seed SubjectsinitSystem
     console.log("Seeding O-Level subjects...");
     const oLevelClasses = ["s1", "s2", "s3", "s4"];
     for (const classLevel of oLevelClasses) {
@@ -105,6 +103,24 @@ const seedDatabase = async () => {
           },
         });
       }
+    }
+
+    // 3. Seed sample quizzes and notes
+    console.log("Seeding sample quizzes and notes...");
+    const {
+      seedSampleQuizzes,
+      seedSampleNotes,
+    } = require("./seedSchoolContent");
+    const superAdmin = await User.findOne({
+      where: { role: "super_admin" },
+    });
+    if (superAdmin) {
+      await seedSampleQuizzes(schoolId, superAdmin.id);
+      await seedSampleNotes(schoolId, superAdmin.id);
+    } else {
+      console.log(
+        "⚠️  No super_admin found, skipping content seeding. Run initSystem.js first.",
+      );
     }
 
     console.log("✅ Database seeding complete.");

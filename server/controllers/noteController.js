@@ -126,6 +126,7 @@ exports.createNote = async (req, res, next) => {
       fileSize: req.file.size,
       fileType: req.file.mimetype,
       uploadedById: req.user.id,
+      schoolId: req.user.schoolId,
     });
 
     res.status(201).json({

@@ -92,10 +92,14 @@ exports.login = async (req, res, next) => {
 
 exports.getMe = async (req, res, next) => {
   try {
-    // User is already loaded by protect middleware (req.user is a Sequelize instance)
+    const School = require("../models/School");
+    const userWithSchool = await User.findByPk(req.user.id, {
+      include: [{ model: School, as: "school" }],
+    });
+
     res.status(200).json({
       success: true,
-      data: req.user,
+      data: userWithSchool || req.user,
     });
   } catch (error) {
     next(error);

@@ -53,6 +53,11 @@ async function checkAuth() {
     const data = await response.json();
     currentAdmin = data.data;
 
+    if (currentAdmin.role === "student") {
+      window.location.href = "/pages/student-dashboard.html";
+      return;
+    }
+
     // If super admin, pre-load schools list as it's needed for user creation
     if (currentAdmin.role === "super_admin") {
       try {
@@ -88,7 +93,7 @@ function renderApp() {
                 <h1 class="nav-logo">📚 Admin Dashboard</h1>
                 <div class="nav-user">
                     <button class="btn-refresh" id="refreshBtn">🔄 Sync Data</button>
-                    <span id="adminName">${currentAdmin.name}</span>
+                    <span id="adminName">${currentAdmin.name} <strong>(${currentAdmin.school ? currentAdmin.school.name : 'Master-Admin'})</strong></span>
                     <button class="btn-logout" id="logoutBtn">Logout</button>
                 </div>
             </div>
@@ -107,6 +112,7 @@ function renderApp() {
                     <li><a href="#" class="sidebar-link" data-tab="quizzes">❓ Activity/Quizzes</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="resources">🔗 Resources</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="streams">📁 Streams</a></li>
+                    <li><a href="#" class="sidebar-link" data-tab="discussions">🗣️ Discussions/Meetings</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="reset-requests">🔑 Reset Requests</a></li>
                     ${currentAdmin.role === "super_admin" || (!currentAdmin.schoolId) ? '<li><a href="#" class="sidebar-link" data-tab="activation">🛡️ System Activation</a></li>' : ""}
                 </ul>
@@ -120,7 +126,10 @@ function renderApp() {
     `;
 
   setupEventListeners();
-  switchTab("dashboard");
+  // Restore the last active tab from sessionStorage so refreshing the page
+  // does not bounce the admin back to the dashboard tab.
+  const lastTab = sessionStorage.getItem("admin_active_tab") || "dashboard";
+  switchTab(lastTab);
 }
 
 // Setup all event listeners
@@ -185,10 +194,18 @@ function setupEventListeners() {
       deleteResource(e.target.getAttribute("data-resource-id"));
     }
     // Stream actions
-    else if (e.target.classList.contains("edit-stream-btn")) {
-      editStream(e.target.getAttribute("data-stream-id"));
-    } else if (e.target.classList.contains("delete-stream-btn")) {
+    else if (e.target.classList.contains("delete-stream-btn")) {
       deleteStream(e.target.getAttribute("data-stream-id"));
+    }
+    // Discussion actions
+    else if (e.target.classList.contains("edit-discussion-btn")) {
+      editDiscussion(e.target.getAttribute("data-discussion-id"));
+    } else if (e.target.classList.contains("delete-discussion-btn")) {
+      deleteDiscussion(e.target.getAttribute("data-discussion-id"));
+    } else if (e.target.classList.contains("approve-discussion-btn")) {
+      updateDiscussionStatus(e.target.getAttribute("data-discussion-id"), "approved");
+    } else if (e.target.classList.contains("reject-discussion-btn")) {
+      updateDiscussionStatus(e.target.getAttribute("data-discussion-id"), "rejected");
     }
     // Reset password actions
     else if (e.target.classList.contains("reset-password-btn")) {
@@ -204,6 +221,8 @@ function setupEventListeners() {
 function switchTab(tabName) {
   try {
     currentTab = tabName;
+    // Persist so the page survives a browser refresh
+    sessionStorage.setItem("admin_active_tab", tabName);
     console.log("Switching to tab:", tabName);
 
     // Update active tab
@@ -270,9 +289,19 @@ function switchTab(tabName) {
     } else if (tabName === "streams") {
       content = renderStreamsTab();
       mainContent.innerHTML = content;
+    } else if (tabName === "streams") {
+      content = renderStreamsTab();
+      mainContent.innerHTML = content;
       setTimeout(() => {
         setupStreamsListeners();
         loadStreams();
+      }, 10);
+    } else if (tabName === "discussions") {
+      content = renderDiscussionsTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        setupDiscussionsListeners();
+        loadDiscussions();
       }, 10);
     } else if (tabName === "reset-requests") {
       content = renderResetRequestsTab();
@@ -1651,7 +1680,10 @@ async function saveQuiz(event) {
       body: formData,
     });
 
-    if (!response.ok) throw new Error("Failed to save quiz");
+    if (!response.ok) {
+      const errRes = await response.json().catch(() => ({}));
+      throw new Error(errRes.message || "Failed to save quiz");
+    }
     showSuccess("Quiz saved successfully");
     closeModal();
     loadQuizzes();
@@ -2089,6 +2121,7 @@ function getSubjectOptions(selectedSubject = "") {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  sessionStorage.removeItem("admin_active_tab");
   window.location.href = "/pages/login.html";
 }
 
@@ -2146,6 +2179,7 @@ async function refreshCurrentTab() {
     else if (currentTab === "quizzes") await loadQuizzes();
     else if (currentTab === "resources") await loadResources();
     else if (currentTab === "streams") await loadStreams();
+    else if (currentTab === "discussions") await loadDiscussions();
 
     showToast("Data synchronized successfully", "success");
   } catch (error) {
@@ -2717,5 +2751,222 @@ async function generateLicenseKey() {
     }
   } catch (e) {
     showError("Failed to generate license key");
+  }
+}
+
+// ============================================
+// DISCUSSIONS & MEETINGS MANAGEMENT
+// ============================================
+
+function renderDiscussionsTab() {
+  return `
+        <div id="discussions" class="tab-content">
+            <div class="section-header">
+                <h2>Seminars, Meetings & Discussions</h2>
+                <button class="btn-primary" id="addDiscussionBtn">+ Create New Meeting</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Subject</th>
+                            <th>Level/Class</th>
+                            <th>Meeting Link</th>
+                            <th>Host</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="discussionsTableBody">
+                        <tr><td colspan="7" class="loading">Loading discussions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function setupDiscussionsListeners() {
+  const addBtn = document.getElementById("addDiscussionBtn");
+  if (addBtn) addBtn.addEventListener("click", () => showAddDiscussionModal());
+}
+
+async function loadDiscussions() {
+  try {
+    const res = await fetch(`${API_BASE}/discussions`, {
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    displayDiscussions(data.data || []);
+  } catch (error) {
+    showError("Failed to load discussions");
+  }
+}
+
+function displayDiscussions(discussions) {
+  const tbody = document.getElementById("discussionsTableBody");
+  if (!tbody) return;
+
+  if (discussions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No meetings scheduled yet.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = discussions
+    .map(
+      (d) => `
+        <tr>
+            <td>
+                <strong>${d.title}</strong><br>
+                <small>${d.description || ""}</small>
+            </td>
+            <td>${d.subject ? d.subject.name : "Unlinked"}</td>
+            <td>${d.level.toUpperCase()} - ${d.class.toUpperCase()}</td>
+            <td>
+                <a href="${d.meetingLink}" target="_blank" class="text-primary">Join Meeting 🔗</a>
+            </td>
+            <td>${d.createdBy ? d.createdBy.name : "System"}</td>
+            <td>
+                <span class="badge badge-${d.status === "approved" ? "success" : d.status === "rejected" ? "danger" : "warning"}">
+                    ${d.status.toUpperCase()}
+                </span>
+            </td>
+            <td>
+                <div class="action-buttons">
+                    ${d.status === "pending" ? `
+                        <button class="btn-sm btn-success approve-discussion-btn" data-discussion-id="${d.id}">Approve</button>
+                        <button class="btn-sm btn-danger reject-discussion-btn" data-discussion-id="${d.id}">Reject</button>
+                    ` : ""}
+                    <button class="btn-sm btn-primary edit-discussion-btn" data-discussion-id="${d.id}">Edit</button>
+                    <button class="btn-sm btn-danger delete-discussion-btn" data-discussion-id="${d.id}">Delete</button>
+                </div>
+            </td>
+        </tr>
+    `,
+    )
+    .join("");
+}
+
+async function showAddDiscussionModal(id = null) {
+  let discussion = null;
+  if (id) {
+    // Find discussion in local cache or fetch
+  }
+
+  const title = id ? "Edit Meeting" : "Schedule New Meeting/Seminar";
+
+  const subjectOptions = allSubjects.map(s => `<option value="${s.id}">${s.name} (${s.code})</option>`).join("");
+
+  const content = `
+        <form id="discussionForm">
+            <input type="hidden" id="discId" value="${id || ""}">
+            <div class="form-group">
+                <label>Meeting Title</label>
+                <input type="text" id="discTitle" required placeholder="e.g. Physics Seminar on Mechanics">
+            </div>
+            <div class="form-group">
+                <label>Linked Subject</label>
+                <select id="discSubject" required>
+                    <option value="">Select Subject</option>
+                    ${subjectOptions}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Level</label>
+                <select id="discLevel" required onchange="updateClassSelect('discLevel', 'discClass')">
+                    <option value="">Select Level</option>
+                    <option value="o-level">O-Level</option>
+                    <option value="a-level">A-Level</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Class</label>
+                <select id="discClass" required>
+                    <option value="">Select Class</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Meeting Link (Zoom/Google Meet/etc)</label>
+                <input type="url" id="discLink" required placeholder="https://zoom.us/j/...">
+            </div>
+            <div class="form-group">
+                <label>Description / Agenda</label>
+                <textarea id="discDesc" rows="3"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-primary">Save Meeting</button>
+            </div>
+        </form>
+    `;
+
+  showModal(title, content, () => {
+    document.getElementById("discussionForm").addEventListener("submit", saveDiscussion);
+  });
+}
+
+async function saveDiscussion(e) {
+  e.preventDefault();
+  const id = document.getElementById("discId").value;
+  const data = {
+    title: document.getElementById("discTitle").value.trim(),
+    subjectId: document.getElementById("discSubject").value,
+    level: document.getElementById("discLevel").value,
+    class: document.getElementById("discClass").value,
+    meetingLink: document.getElementById("discLink").value.trim(),
+    description: document.getElementById("discDesc").value.trim(),
+  };
+
+  const url = id ? `${API_BASE}/discussions/${id}` : `${API_BASE}/discussions`;
+  const method = id ? "PUT" : "POST";
+
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    const parsed = await res.json();
+    if (res.ok) {
+      showSuccess(parsed.message || "Meeting saved successfully");
+      closeModal();
+      loadDiscussions();
+    } else {
+      showError(parsed.message || "Failed to save meeting");
+    }
+  } catch (error) {
+    showError("Network error while saving");
+  }
+}
+
+async function deleteDiscussion(id) {
+  if (!confirm("Are you sure you want to delete this meeting? Students will lose access.")) return;
+  try {
+    const res = await fetch(`${API_BASE}/discussions/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    if (res.ok) {
+      showSuccess("Meeting deleted");
+      loadDiscussions();
+    }
+  } catch (error) {
+    showError("Delete failed");
+  }
+}
+
+async function updateDiscussionStatus(id, status) {
+  try {
+    const res = await fetch(`${API_BASE}/discussions/${id}/status`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    if (res.ok) {
+      showSuccess(`Meeting ${status}`);
+      loadDiscussions();
+    }
+  } catch (error) {
+    showError("Status update failed");
   }
 }

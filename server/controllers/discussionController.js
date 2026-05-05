@@ -1,16 +1,37 @@
 const Discussion = require("../models/Discussion");
 const User = require("../models/User");
+const Subject = require("../models/Subject");
 
 // Create a new discussion
 exports.createDiscussion = async (req, res, next) => {
   try {
+    // Only Admin, School Admin and Teacher can create discussions
+    if (
+      !["admin", "super_admin", "school_admin", "teacher"].includes(
+        req.user.role,
+      )
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only Admins and Teachers can create discussions/meetings.",
+      });
+    }
+
     const {
       title,
       description,
       meetingLink,
       class: studentClass,
       level,
+      subjectId,
     } = req.body;
+
+    if (!subjectId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please link the discussion to a subject.",
+      });
+    }
 
     const discussion = await Discussion.create({
       title,
@@ -18,15 +39,21 @@ exports.createDiscussion = async (req, res, next) => {
       meetingLink,
       class: studentClass,
       level,
-      status: "pending",
+      subjectId,
+      status: ["admin", "super_admin", "school_admin"].includes(req.user.role)
+        ? "approved"
+        : "pending",
       createdById: req.user.id,
+      schoolId: req.user.schoolId,
     });
 
     res.status(201).json({
       success: true,
       data: discussion,
       message:
-        "Discussion proposed successfully. It is pending admin approval.",
+        req.user.role === "admin"
+          ? "Discussion created successfully."
+          : "Discussion proposed successfully. It is pending admin approval.",
     });
   } catch (error) {
     next(error);
@@ -36,12 +63,12 @@ exports.createDiscussion = async (req, res, next) => {
 // Get discussions (Admin sees all, Student sees approved for their level + class)
 exports.getDiscussions = async (req, res, next) => {
   try {
-    const { level, class: studentClass } = req.query;
+    const { level, class: studentClass, subjectId } = req.query;
 
-    let whereClause = {};
+    let whereClause = { schoolId: req.user.schoolId };
 
-    // If user is not admin, apply student restrictions
-    if (req.user.role !== "admin") {
+    // If user is not admin/teacher, apply student restrictions
+    if (req.user.role === "student") {
       whereClause.status = "approved";
       // Normalize to lowercase to avoid casing mismatches with enum values
       if (level) {
@@ -52,10 +79,15 @@ exports.getDiscussions = async (req, res, next) => {
       }
     }
 
+    if (subjectId) {
+      whereClause.subjectId = subjectId;
+    }
+
     const discussions = await Discussion.findAll({
       where: whereClause,
       include: [
-        { model: User, as: "createdBy", attributes: ["id", "name", "email"] },
+        { model: User, as: "createdBy", attributes: ["id", "name", "role"] },
+        { model: Subject, as: "subject", attributes: ["name", "code"] },
       ],
       order: [["createdAt", "DESC"]],
     });
@@ -94,45 +126,6 @@ exports.updateStatus = async (req, res, next) => {
       success: true,
       data: discussion,
       message: `Discussion status updated to ${status}`,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Add publication to a discussion (Students)
-exports.addPublication = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { publicationText } = req.body;
-
-    const discussion = await Discussion.findByPk(id);
-    if (!discussion) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Discussion not found" });
-    }
-
-    // Optionally strictly ensure that only the creator can add a publication
-    if (discussion.createdById !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: "Only the creator can add publications",
-      });
-    }
-
-    discussion.publicationText = publicationText;
-    // We could set status = 'pending' if it needs admin re-approval
-    // Wait, the publication is inside the discussion. Setting it to pending hides the whole discussion.
-    // We'll trust the user, or let the admin see the text since it's just a seminar summary.
-    // Changing status to "pending" is reasonable based on instructions. Keep the status as it is but allow admin to edit or reject it.
-
-    await discussion.save();
-
-    res.status(200).json({
-      success: true,
-      data: discussion,
-      message: "Publication added successfully.",
     });
   } catch (error) {
     next(error);

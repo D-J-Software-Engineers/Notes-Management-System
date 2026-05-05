@@ -4,6 +4,10 @@ const Note = require("../models/Note");
 const Quiz = require("../models/Quiz");
 const { Sequelize, sequelize } = require("../config/db");
 const { generateLicenseKey } = require("../utils/licenseGenerator");
+const {
+  seedSampleQuizzes,
+  seedSampleNotes,
+} = require("../utils/seedSchoolContent");
 
 /**
  * Controller for the Super Admin dashboard to manage the entire Platform
@@ -88,6 +92,15 @@ exports.createSchool = async (req, res) => {
 
       return newSchool;
     });
+
+    // Seed sample quizzes and notes OUTSIDE the transaction (uses file system for notes)
+    const superAdmin = await User.findOne({ where: { role: "super_admin" } });
+    if (superAdmin) {
+      await seedSampleQuizzes(school.id, superAdmin.id);
+      await seedSampleNotes(school.id, superAdmin.id);
+    } else {
+      console.log("⚠️  No super_admin found, skipping sample content seeding.");
+    }
 
     res.status(201).json({ success: true, data: school });
   } catch (error) {

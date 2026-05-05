@@ -4,7 +4,6 @@ const {
   createDiscussion,
   getDiscussions,
   updateStatus,
-  addPublication,
 } = require("../controllers/discussionController");
 
 const router = express.Router();
@@ -12,7 +11,6 @@ const router = express.Router();
 // Routes for getting and creating
 router.get("/", protect, getDiscussions);
 router.post("/", protect, createDiscussion);
-router.put("/:id/publication", protect, addPublication);
 
 // Admin exclusive routes
 router.put(

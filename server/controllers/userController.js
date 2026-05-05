@@ -111,6 +111,14 @@ exports.createUser = async (req, res, next) => {
       isConfirmed: req.body.isConfirmed || false,
     });
 
+    // Auto-seed sample quizzes when a school_admin is first created for a school
+    if (user.role === "school_admin" && user.schoolId) {
+      const { seedSampleQuizzes } = require("../utils/seedSchoolContent");
+      seedSampleQuizzes(user.schoolId, user.id).catch((err) =>
+        console.error("Quiz seeding error:", err.message),
+      );
+    }
+
     res.status(201).json({
       success: true,
       message: "User created successfully",

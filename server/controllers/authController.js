@@ -7,7 +7,6 @@ exports.register = async (req, res, next) => {
       name,
       email,
       password,
-      role,
       schoolId,
       class: classLevel,
       level,
@@ -123,7 +122,11 @@ exports.updatePassword = async (req, res, next) => {
       );
     }
 
-    const user = await User.findById(req.user.id).select("+password");
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
 
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
@@ -180,8 +183,13 @@ exports.requestPasswordReset = async (req, res, next) => {
 // @route   GET /api/auth/reset-requests
 exports.getResetRequests = async (req, res, next) => {
   try {
+    const where = { resetRequest: true };
+    // Scope to the admin's school (super_admin sees all)
+    if (req.user.role !== "super_admin") {
+      where.schoolId = req.user.schoolId;
+    }
     const users = await User.findAll({
-      where: { resetRequest: true },
+      where,
       attributes: { exclude: ["password"] },
       order: [["resetRequestedAt", "DESC"]],
     });

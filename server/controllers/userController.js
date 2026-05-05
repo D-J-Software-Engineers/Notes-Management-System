@@ -21,8 +21,8 @@ exports.getAllUsers = async (req, res, next) => {
       page = 1,
     } = req.query;
 
-    // Build Sequelize where clause
-    const where = { isActive: true };
+    // Build Sequelize where clause — scoped to the requesting user's school
+    const where = { isActive: true, schoolId: req.user.schoolId };
 
     if (role) where.role = role;
     if (level) where.level = level;
@@ -111,11 +111,17 @@ exports.createUser = async (req, res, next) => {
       isConfirmed: req.body.isConfirmed || false,
     });
 
-    // Auto-seed sample quizzes when a school_admin is first created for a school
+    // Auto-seed sample content when a school_admin is first created for a school
     if (user.role === "school_admin" && user.schoolId) {
-      const { seedSampleQuizzes } = require("../utils/seedSchoolContent");
+      const {
+        seedSampleQuizzes,
+        seedSampleNotes,
+      } = require("../utils/seedSchoolContent");
       seedSampleQuizzes(user.schoolId, user.id).catch((err) =>
         console.error("Quiz seeding error:", err.message),
+      );
+      seedSampleNotes(user.schoolId, user.id).catch((err) =>
+        console.error("Note seeding error:", err.message),
       );
     }
 
@@ -255,16 +261,35 @@ exports.activateUser = async (req, res, next) => {
 // @access  Private (Admin only)
 exports.getUserStats = async (req, res, next) => {
   try {
-    const totalUsers = await User.count();
-    const totalStudents = await User.count({ where: { role: "student" } });
-    const totalAdmins = await User.count({ where: { role: "admin" } });
-    const activeUsers = await User.count({ where: { isActive: true } });
-    const inactiveUsers = await User.count({ where: { isActive: false } });
-    const pendingApproval = await User.count({ where: { isConfirmed: false } });
-    const confirmedUsers = await User.count({ where: { isConfirmed: true } });
+    // Scope all counts to the current admin's school
+    const schoolWhere =
+      req.user.role === "super_admin" ? {} : { schoolId: req.user.schoolId };
 
-    const oLevelStudents = await User.count({ where: { level: "o-level" } });
-    const aLevelStudents = await User.count({ where: { level: "a-level" } });
+    const totalUsers = await User.count({ where: schoolWhere });
+    const totalStudents = await User.count({
+      where: { ...schoolWhere, role: "student" },
+    });
+    const totalAdmins = await User.count({
+      where: { ...schoolWhere, role: "school_admin" },
+    });
+    const activeUsers = await User.count({
+      where: { ...schoolWhere, isActive: true },
+    });
+    const inactiveUsers = await User.count({
+      where: { ...schoolWhere, isActive: false },
+    });
+    const pendingApproval = await User.count({
+      where: { ...schoolWhere, isConfirmed: false },
+    });
+    const confirmedUsers = await User.count({
+      where: { ...schoolWhere, isConfirmed: true },
+    });
+    const oLevelStudents = await User.count({
+      where: { ...schoolWhere, level: "o-level" },
+    });
+    const aLevelStudents = await User.count({
+      where: { ...schoolWhere, level: "a-level" },
+    });
 
     res.status(200).json({
       success: true,
@@ -295,9 +320,7 @@ exports.approveUser = async (req, res, next) => {
       return next(new ErrorResponse("User not found", 404));
     }
 
-    // THIS is the flag your system actually uses
     user.isConfirmed = true;
-
     await user.save();
 
     res.status(200).json({
@@ -307,13 +330,12 @@ exports.approveUser = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
-    console.error("Error approving user:", error);
   }
 };
 
 exports.rejectUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findByPk(req.params.id);
 
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
@@ -332,8 +354,12 @@ exports.rejectUser = async (req, res, next) => {
 
 exports.getPendingUsers = async (req, res, next) => {
   try {
+    const where = { isConfirmed: false };
+    if (req.user.role !== "super_admin") {
+      where.schoolId = req.user.schoolId;
+    }
     const users = await User.findAll({
-      where: { isConfirmed: false },
+      where,
       attributes: { exclude: ["password"] },
       order: [["createdAt", "DESC"]],
     });

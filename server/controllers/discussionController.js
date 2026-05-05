@@ -50,10 +50,9 @@ exports.createDiscussion = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: discussion,
-      message:
-        req.user.role === "admin"
-          ? "Discussion created successfully."
-          : "Discussion proposed successfully. It is pending admin approval.",
+      message: ["admin", "super_admin", "school_admin"].includes(req.user.role)
+        ? "Discussion created successfully."
+        : "Discussion proposed successfully. It is pending admin approval.",
     });
   } catch (error) {
     next(error);

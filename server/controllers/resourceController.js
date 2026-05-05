@@ -131,6 +131,7 @@ exports.createResource = async (req, res, next) => {
       classStream: classStream || null,
       stream: stream || null,
       addedById: req.user.id,
+      schoolId: req.user.schoolId,
     };
 
     // Handle URL-based resources

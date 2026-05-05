@@ -3,8 +3,16 @@
  * We use the model registry instead of direct requires to be safe.
  */
 function setupAssociations(sequelize) {
-  const { User, School, Note, Quiz, Subject, ClassStream, Resource } =
-    sequelize.models;
+  const {
+    User,
+    School,
+    Note,
+    Quiz,
+    Subject,
+    ClassStream,
+    Resource,
+    Discussion,
+  } = sequelize.models;
 
   // User - School
   if (User && School) {
@@ -52,6 +60,18 @@ function setupAssociations(sequelize) {
   if (ClassStream && School) {
     ClassStream.belongsTo(School, { foreignKey: "schoolId", as: "school" });
     School.hasMany(ClassStream, { foreignKey: "schoolId", as: "streams" });
+  }
+
+  // Discussion - Subject
+  if (Discussion && Subject) {
+    Discussion.belongsTo(Subject, { foreignKey: "subjectId", as: "subject" });
+    Subject.hasMany(Discussion, { foreignKey: "subjectId", as: "discussions" });
+  }
+
+  // Discussion - User (createdBy)
+  if (Discussion && User) {
+    Discussion.belongsTo(User, { foreignKey: "createdById", as: "createdBy" });
+    User.hasMany(Discussion, { foreignKey: "createdById", as: "discussions" });
   }
 
   console.log("🛠️ Database associations initialized.");

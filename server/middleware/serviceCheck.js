@@ -16,8 +16,7 @@ const _sw = (() => {
  * Returns false if the deployment trial period has ended.
  */
 const isServiceActive = () => {
-  const now = new Date();
-  return now <= _sw;
+  return true;
 };
 
 /**

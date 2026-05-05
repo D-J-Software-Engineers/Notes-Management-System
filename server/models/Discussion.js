@@ -64,6 +64,14 @@ const Discussion = sequelize.define(
         key: "id",
       },
     },
+    subjectId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "subjects",
+        key: "id",
+      },
+    },
   },
   {
     tableName: "discussions",
@@ -71,7 +79,5 @@ const Discussion = sequelize.define(
     indexes: [{ fields: ["class", "level"] }, { fields: ["status"] }],
   },
 );
-
-Discussion.belongsTo(User, { foreignKey: "createdById", as: "createdBy" });
 
 module.exports = Discussion;

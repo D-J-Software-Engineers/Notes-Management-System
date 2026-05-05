@@ -53,10 +53,6 @@ exports.authorize = (...roles) => {
       return next();
     }
 
-    console.log(
-      `[AUTH] Access attempt: User ${req.user.id} (${req.user.role}) trying to reach route needing [${roles}]`,
-    );
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
         success: false,

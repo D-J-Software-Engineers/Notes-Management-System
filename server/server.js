@@ -24,9 +24,6 @@ const { setupAssociations } = require("./models/associations");
 
 setupAssociations(require("./config/db").sequelize);
 
-// ... rest of imports
-
-// ... imports
 const fs = require("fs");
 const https = require("https");
 const os = require("os");
@@ -63,13 +60,15 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Request Logger for debugging LAN access
-app.use((req, res, next) => {
-  console.log(
-    `${new Date().toISOString()} - ${req.method} ${req.url} - ${req.ip}`,
-  );
-  next();
-});
+// Request Logger — development only
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    console.log(
+      `${new Date().toISOString()} - ${req.method} ${req.url} - ${req.ip}`,
+    );
+    next();
+  });
+}
 
 // Removed manual CSP middleware as Helmet handles it now
 
@@ -149,15 +148,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Test endpoint
-app.get("/api/test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Server is working perfectly!",
-    timestamp: new Date().toISOString(),
-  });
-});
-
 // API routes
 app.use("/api", serviceWindowMiddleware);
 app.use("/api/auth", authRoutes);
@@ -225,7 +215,6 @@ const startServer = async () => {
     await connectDB();
     await seedDatabase();
 
-    const os = require("os");
     const addresses = [];
     Object.values(os.networkInterfaces()).forEach((nets) => {
       nets.forEach((net) => {

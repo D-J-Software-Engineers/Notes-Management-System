@@ -114,7 +114,8 @@ function renderApp() {
                     <li><a href="#" class="sidebar-link" data-tab="streams">📁 Streams</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="discussions">🗣️ Discussions/Meetings</a></li>
                     <li><a href="#" class="sidebar-link" data-tab="reset-requests">🔑 Reset Requests</a></li>
-                    ${currentAdmin.role === "super_admin" || (!currentAdmin.schoolId) ? '<li><a href="#" class="sidebar-link" data-tab="activation">🛡️ System Activation</a></li>' : ""}
+                    ${['super_admin', 'school_admin'].includes(currentAdmin.role) || (!currentAdmin.schoolId) ? '<li><a href="#" class="sidebar-link" data-tab="activation">🛡️ System Activation</a></li>' : ""}
+                    ${currentAdmin.role === "super_admin" ? '<li><a href="#" class="sidebar-link" data-tab="revenue">💰 Financials / Revenue</a></li>' : ""}
                 </ul>
             </aside>
 
@@ -321,6 +322,12 @@ function switchTab(tabName) {
       mainContent.innerHTML = content;
       setTimeout(() => {
         loadActivationStatus();
+      }, 10);
+    } else if (tabName === "revenue" && currentAdmin.role === "super_admin") {
+      content = renderRevenueTab();
+      mainContent.innerHTML = content;
+      setTimeout(() => {
+        loadRevenueStats();
       }, 10);
     } else {
       console.error("Unknown tab:", tabName);
@@ -2968,5 +2975,83 @@ async function updateDiscussionStatus(id, status) {
     }
   } catch (error) {
     showError("Status update failed");
+  }
+}
+
+function renderRevenueTab() {
+  return `
+        <div id="revenue" class="tab-content">
+            <div class="section-header">
+                <h2>💰 Financials & Revenue Overview</h2>
+                <p>Track student subscriptions and expected revenue across all schools.</p>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>School Name</th>
+                            <th>Students (Confirmed/Total)</th>
+                            <th>Fee Per Student</th>
+                            <th>Expected Revenue</th>
+                            <th>Currency</th>
+                        </tr>
+                    </thead>
+                    <tbody id="revenueTableBody">
+                        <tr><td colspan="5" class="loading">Loading revenue data...</td></tr>
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8faff; font-weight: bold; font-size: 1.1em;">
+                            <td colspan="3">TOTAL ESTIMATED PLATFORM REVENUE</td>
+                            <td id="totalPlatformRevenue">Calculating...</td>
+                            <td>UGX</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+async function loadRevenueStats() {
+  const tbody = document.getElementById("revenueTableBody");
+  const totalEl = document.getElementById("totalPlatformRevenue");
+  
+  try {
+    const schoolsRes = await fetch(`${API_BASE}/super-admin/schools`, { headers: getAuthHeaders() });
+    const schoolsData = await schoolsRes.json();
+    const schools = schoolsData.data || [];
+    
+    let totalPlatformRevenue = 0;
+    let html = "";
+    
+    for (const school of schools) {
+      try {
+        const revRes = await fetch(`${API_BASE}/super-admin/schools/${school.id}/revenue`, { headers: getAuthHeaders() });
+        const revData = await revRes.json();
+        const r = revData.data;
+        
+        if (r) {
+          totalPlatformRevenue += r.expectedRevenue;
+          html += `
+            <tr>
+              <td><strong>${r.schoolName}</strong></td>
+              <td>${r.confirmedStudents} / ${r.totalStudents}</td>
+              <td>${r.feePerStudent.toLocaleString()}</td>
+              <td><span style="color: #27ae60; font-weight: bold;">${r.expectedRevenue.toLocaleString()}</span></td>
+              <td>${r.currency}</td>
+            </tr>
+          `;
+        }
+      } catch (e) {
+        console.warn("Failed to load revenue for school", school.name, e);
+      }
+    }
+    
+    tbody.innerHTML = html || '<tr><td colspan="5" class="no-data">No data available</td></tr>';
+    totalEl.textContent = totalPlatformRevenue.toLocaleString();
+    
+  } catch (err) {
+    console.error("Failed to load revenue stats", err);
+    tbody.innerHTML = '<tr><td colspan="5" class="no-data text-danger">Error loading revenue data</td></tr>';
   }
 }

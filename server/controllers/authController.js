@@ -7,7 +7,7 @@ exports.register = async (req, res, next) => {
       name,
       email,
       password,
-      schoolId,
+      registrationCode,
       class: classLevel,
       level,
       combination,
@@ -15,17 +15,31 @@ exports.register = async (req, res, next) => {
       selectedSubjects,
     } = req.body;
 
+    const School = require("../models/School");
+    if (!registrationCode) {
+      return next(
+        new ErrorResponse("Please provide a School Invite Code", 400),
+      );
+    }
+
+    const school = await School.findOne({ where: { registrationCode } });
+    if (!school) {
+      return next(new ErrorResponse("Invalid School Invite Code", 404));
+    }
+
     const userRole = "student"; // Force student role for registration
     const requireConfirmation =
       process.env.REQUIRE_EMAIL_CONFIRMATION === "true";
-    const isConfirmed = userRole === "admin" || !requireConfirmation;
+
+    // Students always require manual approval in SaaS mode; admins auto-confirmed if set
+    const isConfirmed = userRole !== "student" && !requireConfirmation;
 
     const user = await User.create({
       name,
       email,
       password,
       role: userRole,
-      schoolId,
+      schoolId: school.id,
       class: classLevel,
       level,
       combination,
@@ -43,7 +57,7 @@ exports.register = async (req, res, next) => {
       message,
       data: {
         user: {
-          id: user._id,
+          id: user.id,
           name: user.name,
           email: user.email,
           role: user.role,
@@ -229,6 +243,45 @@ exports.resetUserPassword = async (req, res, next) => {
       success: true,
       message: `Password for ${user.name} has been reset successfully`,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get registration data (streams/subjects) publicly (Public)
+// @route   GET /api/auth/registration-data
+exports.getRegistrationData = async (req, res, next) => {
+  try {
+    const { code, type, class: classVal, level } = req.query;
+
+    if (!code) {
+      return next(new ErrorResponse("School Invite Code is required", 400));
+    }
+
+    const School = require("../models/School");
+    const school = await School.findOne({ where: { registrationCode: code } });
+
+    if (!school) {
+      return next(new ErrorResponse("Invalid School Invite Code", 404));
+    }
+
+    if (type === "streams") {
+      const Stream = require("../models/Stream");
+      const streams = await Stream.findAll({
+        where: { schoolId: school.id, class: classVal },
+      });
+      return res.status(200).json({ success: true, data: streams });
+    } else if (type === "subjects") {
+      const Subject = require("../models/Subject");
+      const subjects = await Subject.findAll({
+        where: { schoolId: school.id, level: level || "a-level" },
+      });
+      return res.status(200).json({ success: true, data: subjects });
+    }
+
+    res
+      .status(400)
+      .json({ success: false, message: "Invalid data type requested" });
   } catch (error) {
     next(error);
   }

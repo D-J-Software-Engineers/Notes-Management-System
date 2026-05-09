@@ -1,156 +1,99 @@
-# Nsoma DigiLib
+# 📚 Nsoma DigLibs - Digital Library & Notes Management System
 
-A **serverless, offline-first Nsoma DigiLib** built for Ugandan schools following the **UNEB curriculum** (O-Level & A-Level). Runs as a native desktop app on **Windows** and a native mobile app on **Android** — no internet, no server setup required.
+**Nsoma DigLibs** is a premium, multi-tenant digital library and academic management platform designed for schools. It provides a secure, isolated environment for institutions to share learning materials, track student performance, and manage subscriptions.
 
 ---
 
-## ✨ Features
+## 🌟 Key Features
 
-- 📚 **Notes & Resources** — Admins upload notes and resources (PDF, video, etc.) per subject and class level.
-- 📝 **Quizzes** — Teachers create quizzes; students take them directly in the app.
-- 👩‍🎓 **Student Accounts** — Students register, browse notes, and track their subjects.
-- 🔐 **Admin Panel** — Teachers/Admins manage users, subjects, streams, and content.
-- 📶 **LAN Access** — Run on a lab PC and let students connect via browser on the same network.
-- 📲 **Android App** — Native Android build via Capacitor.
-- 🖥️ **Windows App** — Native Windows executable via Electron.
-- 🗄️ **Serverless SQLite** — No external database required. Everything is stored locally in a single SQLite file.
+- **🔐 Secure Multi-Tenancy:** Data isolation via unique School Invite Codes.
+- **📁 Digital Library:** Upload and manage Notes, Quizzes, and external Resources.
+- **👥 User Management:** Unified portal for Super Admins, School Admins, Teachers, and Students.
+- **💰 Financial Tracking:** Super Admin dashboard for tracking school revenue and student subscriptions.
+- **🛡️ Subscription Engine:** Direct activation and license management for institutions.
+- **🗣️ Virtual Classroom:** Integrated discussion and meeting management.
+- **🔔 Automated Notifications:** Smart alerts for students when new relevant content is posted.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+
+- **Node.js** (v18+)
+- **npm** or **yarn**
+- **SQLite** (for local development) or **Postgres** (for production)
+
+### 2. Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/D-J-Software-Engineers/Notes-Management-System.git
+cd Notes-Management-System
+
+# Install dependencies
+npm install
+```
+
+### 3. Environment Setup
+
+Create a `.env` file in the root directory and add the following:
+
+```env
+PORT=5000
+DATABASE_URL=sqlite:./database.sqlite
+JWT_SECRET=your_secret_key
+SUPER_ADMIN_EMAIL=admin@nsoma.ug
+SUPER_ADMIN_PASSWORD=admin1234
+CLIENT_URL=http://localhost:3000
+```
+
+### 4. Run the Application
+
+```bash
+# Start the development server
+npm run dev
+```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer    | Technology                     |
-| -------- | ------------------------------ |
-| Frontend | HTML5, Vanilla CSS, JavaScript |
-| Backend  | Node.js + Express              |
-| Database | SQLite (via Sequelize ORM)     |
-| Desktop  | Electron                       |
-| Mobile   | Capacitor (Android)            |
-| PWA      | Service Worker                 |
-
----
-
-## 🚀 Getting Started (Development)
-
-### Prerequisites
-
-- **Node.js** v18 or higher
-- **npm**
-
-### Installation
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/D-J-Software-Engineers/Notes-Management-System.git
-cd Notes-Management-System
-
-# 2. Install dependencies
-npm install
-
-# 3. Seed the default admin account
-npm run seed
-
-# 4. Start the development server
-npm run dev
-```
-
-The app will be available at **[http://localhost:5000](http://localhost:5000)**.
-
-> **Default Admin Credentials**
->
-> - **Email:** `admin@school.com`
-> - **Password:** `Admin@123`
-
----
-
-## 🌐 LAN Access (School ICT Lab)
-
-To let students connect from other computers on the same network:
-
-1. Find your server PC's IP address:
-   ```bash
-   hostname -I   # Linux/Mac
-   ipconfig      # Windows
-   ```
-2. Students open a browser and navigate to `http://<SERVER_IP>:5000`.
-
----
-
-## 🖥️ Windows Desktop App
-
-Run the app as a standalone Windows executable (no browser needed):
-
-```bash
-install node
-run npm install
-# Run in Electron during development
-
-npm run electron:start
-
-# Build a Windows installer / portable executable
-npm run electron:build
-```
-
-The built installer and portable `.exe` will be found in the `dist/` folder.
-
----
-
-## 📱 Android App
-
-The Android app is built with **Capacitor**:
-
-```bash
-# Sync web assets to the Android project
-npx cap sync android
-
-# Open in Android Studio to build & run
-npx cap open android
-```
+- **Frontend:** Vanilla JS, HTML5, CSS3 (Glassmorphism UI)
+- **Backend:** Node.js, Express
+- **Database:** Sequelize ORM (supporting SQLite/Postgres)
+- **Security:** JWT Authentication, Role-Based Access Control (RBAC)
 
 ---
 
 ## 📂 Project Structure
 
-```
-├── client/              # Frontend (HTML, CSS, JS, Service Worker)
-│   ├── public/          # Static assets served by Express
-│   └── pages/           # HTML page files
-├── server/              # Express backend
-│   ├── controllers/     # Route handlers
-│   ├── models/          # Sequelize models (SQLite)
-│   ├── routes/          # API route definitions
-│   ├── middleware/      # Auth, error handling
-│   ├── utils/           # DB seeder and helpers
-│   └── server.js        # App entry point
-├── android/             # Capacitor Android project
-├── main.js              # Electron main process
-├── database.sqlite      # Local SQLite database (auto-created)
-└── uploads/             # Uploaded notes and resources
+```text
+├── client/              # Frontend assets and logic
+│   ├── public/          # Static files, styles, and core JS
+│   └── pages/           # Individual dashboard pages
+├── server/              # Backend source code
+│   ├── controllers/     # Business logic
+│   ├── models/          # Database schemas
+│   ├── routes/          # API endpoints
+│   ├── middleware/      # Auth and security guards
+│   └── utils/           # Helper services (Notifications, Seeding)
+├── uploads/             # User-uploaded files (Ignored by Git)
+├── SYSTEM_DOCUMENTATION.md # Full user guide & manual
+└── ARCHITECTURE.md      # Technical design & diagrams
 ```
 
 ---
 
-## 📜 Available Scripts
+## 📄 Documentation
 
-| Command                  | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `npm run dev`            | Start development server with hot-reload |
-| `npm start`              | Start production server                  |
-| `npm run seed`           | Seed the database with the admin account |
-| `npm run electron:start` | Launch the Electron desktop app          |
-| `npm run electron:build` | Build the Windows installer/portable exe |
+For detailed information on how to use the system, please refer to:
+
+- 📖 **[User Guide & System Documentation](file:///home/coder/Desktop/dero/Notes-Management-System/SYSTEM_DOCUMENTATION.md)**
+- 🏗️ **[Architectural Design & Flowcharts](file:///home/coder/Desktop/dero/Notes-Management-System/ARCHITECTURE.md)**
 
 ---
 
-## 🔒 Security Notes
+## 🛡️ License
 
-- Admin registration is **disabled** for public users. Only the seeded admin account can create other admins.
-- File uploads are validated to prevent malicious files.
-- JWT-based authentication is used for all API routes.
-- CORS is restricted to `localhost` and local network (`192.168.x.x`) addresses.
-
----
-
-## 📄 License
-
-MIT © [D-J Software Engineers](https://github.com/D-J-Software-Engineers)
+© 2026 Nsoma DigLibs. All rights reserved.

@@ -46,9 +46,21 @@ test("authController.register — role field stripped from body", async (t) => {
     findOne: sinon.stub(),
   };
 
+  const schoolStub = {
+    findOne: sinon.stub().resolves({ id: "school-1", name: "Test School" }),
+  };
+
   const controller = proxyquire("../controllers/authController", {
     "../models/User": userStub,
-    "../middleware/errorHandler": { ErrorResponse: class extends Error {} },
+    "../models/School": schoolStub,
+    "../middleware/errorHandler": {
+      ErrorResponse: class ErrorResponse extends Error {
+        constructor(msg, code) {
+          super(msg);
+          this.statusCode = code;
+        }
+      },
+    },
   });
 
   const req = {
@@ -57,7 +69,7 @@ test("authController.register — role field stripped from body", async (t) => {
       email: "alice@test.com",
       password: "pass123",
       role: "super_admin", // should be stripped
-      schoolId: "school-1",
+      registrationCode: "SCH123",
       class: "s1",
       level: "o-level",
     },

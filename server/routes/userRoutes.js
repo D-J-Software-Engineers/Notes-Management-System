@@ -17,7 +17,7 @@ const { protect, authorize } = require("../middleware/auth");
 const { validateRegister } = require("../middleware/validation");
 
 router.use(protect);
-router.use(authorize("school_admin", "admin"));
+router.use(authorize("super_admin", "school_admin", "admin"));
 
 router.get("/stats", getUserStats);
 router.get("/pending", getPendingUsers);
